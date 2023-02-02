@@ -81,6 +81,7 @@ if ($user->mname != null) {
                     <th>Section</th>
                     <th>Course</th>
                     <th>Deployment office</th>
+                    <th>Rendered time</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -112,6 +113,22 @@ if ($user->mname != null) {
                       <td><?= "4-" . strtoupper($row->section) ?></td>
                       <td><?= $course->short_name ?></td>
                       <td> <?= !$row->deployment_id ? "" : $office->name ?> </td>
+                      <td style="text-transform: capitalize;">
+                        <?php
+                        if ($row->deployment_id) :
+                          $labels = getTotalAndRemainingTime($row->id);
+                        ?>
+                          Total:
+                          <label style="color:<?= $labels["rendered"] != "" ? "darkgreen" : "darkred" ?>">
+                            <?= $labels["rendered"] != "" ? $labels["rendered"] : "-------------" ?>
+                          </label>
+                          <br>
+                          Remaining:
+                          <label style="color:<?= $labels["remaining"] != "" ? "darkred" : "darkgreen" ?>">
+                            <?= $labels["remaining"] != "" ? $labels["remaining"] : "Done" ?>
+                          </label>
+                        <?php endif; ?>
+                      </td>
                     </tr>
                   <?php endwhile; ?>
                 </tbody>
@@ -189,14 +206,14 @@ if ($user->mname != null) {
       {
         extend: 'excel',
         exportOptions: {
-          columns: [2, 3, 4, 5, 6, 7]
+          columns: [2, 3, 4, 5, 6, 7, 8]
         }
       },
       {
         extend: 'print',
         title: "",
         exportOptions: {
-          columns: [2, 3, 4, 5, 6, 7]
+          columns: [2, 3, 4, 5, 6, 7, 8]
         }
       },
       "searchBuilder",

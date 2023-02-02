@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Nov 12, 2022 at 03:15 AM
+-- Generation Time: Nov 26, 2022 at 04:12 AM
 -- Server version: 10.4.22-MariaDB
 -- PHP Version: 7.4.27
 
@@ -36,14 +36,6 @@ CREATE TABLE `attendance` (
   `activity` text DEFAULT NULL,
   `image` varchar(250) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
---
--- Dumping data for table `attendance`
---
-
-INSERT INTO `attendance` (`attendance_id`, `user_id`, `date`, `time_in`, `time_out`, `activity`, `image`) VALUES
-(3, 5, '2022-11-01', '15:03:51', NULL, NULL, '/media/11012022-030351_webcam.jpg'),
-(4, 19, '2022-11-12', '09:55:07', NULL, NULL, '/media/11122022-095507_webcam.jpg');
 
 -- --------------------------------------------------------
 
@@ -135,7 +127,8 @@ INSERT INTO `users` (`id`, `fname`, `lname`, `mname`, `email`, `password`, `cour
 (5, 'test', 'test', 'test', 'test_student@email.com', '$argon2i$v=19$m=65536,t=4,p=1$bGhEckZhaXFsakxVWkIxMQ$7YmZuXWl+l1L2n8mWtBfyU04ZFqCDp/Psl/tM8FZRmA', 1, 'b', 2, 'student', NULL, NULL),
 (19, 'test2', 'test', 'test', 'test_student@email.com', '$argon2i$v=19$m=65536,t=4,p=1$bGhEckZhaXFsakxVWkIxMQ$7YmZuXWl+l1L2n8mWtBfyU04ZFqCDp/Psl/tM8FZRmA', 1, 'b', 1, 'student', NULL, NULL),
 (20, 'test', 'test', 'test', 'test@email.com', '$argon2i$v=19$m=65536,t=4,p=1$Qkx4TlA1NG1JS3pHb2h1MA$Oz1H0LO2L+urP0Q3ZXSRRXxtmV6Ve1FzY/q1x3U85CA', NULL, NULL, NULL, 'admin', 0, 1),
-(21, 'student', 'lname', 'mname', 'test1@email.com', '$argon2i$v=19$m=65536,t=4,p=1$OE5tdjFpL1pQZDlRNzczdg$pwd/59E7cF3NnbvGadTlwtao2F55oS9mDg1Wwl+P3/E', 1, 'b', 0, 'student', NULL, NULL);
+(21, 'student', 'lname', 'mname', 'test1@email.com', '$argon2i$v=19$m=65536,t=4,p=1$OE5tdjFpL1pQZDlRNzczdg$pwd/59E7cF3NnbvGadTlwtao2F55oS9mDg1Wwl+P3/E', 1, 'b', 1, 'student', NULL, NULL),
+(22, 'test', 'awd', 'awd', 'admin@admin.com', '$argon2i$v=19$m=65536,t=4,p=1$ZElaWXk3Z0lQVmZpSVA5aQ$bXr4AicTXCIuN7wVSIr0ZWccxRDWr4YIgy4UDhhB3wQ', NULL, NULL, NULL, 'admin', 0, 2);
 
 --
 -- Indexes for dumped tables
@@ -179,7 +172,7 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `attendance`
 --
 ALTER TABLE `attendance`
-  MODIFY `attendance_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `attendance_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- AUTO_INCREMENT for table `course`
@@ -203,7 +196,7 @@ ALTER TABLE `setting`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

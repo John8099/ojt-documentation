@@ -52,6 +52,12 @@ if (isset($_GET['action'])) {
       case "uploadTimeInImg":
         uploadTimeInImg();
         break;
+      case "timeOut":
+        timeOut();
+        break;
+      case "editActivity":
+        editActivity();
+        break;
       default:
         null;
         break;
@@ -60,6 +66,398 @@ if (isset($_GET['action'])) {
     $response["success"] = false;
     $response["message"] = $e->getMessage();
   }
+}
+function ratingBehavior()
+{
+  return json_encode(
+    array(
+      array(
+        "title" => "Attends regularly",
+        "name" => "behavior_a",
+        "value" => 0
+      ),
+      array(
+        "title" => "Starts the work promptly",
+        "name" => "behavior_b",
+        "value" => 0
+      ),
+      array(
+        "title" => "Courteous and Considerate",
+        "name" => "behavior_c",
+        "value" => 0
+      ),
+      array(
+        "title" => "Express his/her ideas well",
+        "name" => "behavior_d",
+        "value" => 0
+      ),
+      array(
+        "title" => "Listen attentively to trainer",
+        "name" => "behavior_e",
+        "value" => 0
+      ),
+      array(
+        "title" => "Display interest in his/her work",
+        "name" => "behavior_f",
+        "value" => 0
+      ),
+      array(
+        "title" => "Careful in handling office facilities and equipment",
+        "name" => "behavior_g",
+        "value" => 0
+      ),
+      array(
+        "title" => "Works to the best of his/her ability.",
+        "name" => "behavior_h",
+        "value" => 0
+      ),
+      array(
+        "title" => "Works to develop a variety of skills.",
+        "name" => "behavior_i",
+        "value" => 0
+      ),
+      array(
+        "title" => "Cooperates well with others.",
+        "name" => "behavior_j",
+        "value" => 0
+      ),
+      array(
+        "title" => "Is generally  a good follower",
+        "name" => "behavior_k",
+        "value" => 0
+      ),
+      array(
+        "title" => "Accepts responsibility",
+        "name" => "behavior_l",
+        "value" => 0
+      ),
+      array(
+        "title" => "Volunteers for an assignment",
+        "name" => "behavior_m",
+        "value" => 0
+      ),
+      array(
+        "title" => "Makes worth with suggestion",
+        "name" => "behavior_n",
+        "value" => 0
+      ),
+      array(
+        "title" => "Exhibits orderly/ safe working habits",
+        "name" => "behavior_o",
+        "value" => 0
+      ),
+      array(
+        "title" => "Applies principles to actual work station",
+        "name" => "behavior_p",
+        "value" => 0
+      ),
+      array(
+        "title" => "Knowledge in assigned job proceedings",
+        "name" => "behavior_q",
+        "value" => 0
+      ),
+      array(
+        "title" => "Ability to plan activities",
+        "name" => "behavior_r",
+        "value" => 0
+      ),
+      array(
+        "title" => "Initiative/ resourcefulness",
+        "name" => "behavior_s",
+        "value" => 0
+      ),
+      array(
+        "title" => "Judgment and common sense",
+        "name" => "behavior_t",
+        "value" => 0
+      ),
+      array(
+        "title" => "Interest and good attitude towards work",
+        "name" => "behavior_u",
+        "value" => 0
+      ),
+      array(
+        "title" => "Prepare report accurately",
+        "name" => "behavior_v",
+        "value" => 0
+      ),
+      array(
+        "title" => "Submits reports on time",
+        "name" => "behavior_w",
+        "value" => 0
+      ),
+    )
+  );
+}
+
+function generatedRadio($len, $name, $grade = null)
+{
+  $tds = array();
+
+  for ($i = 1; $i <= $len; $i++) {
+    array_push($tds, "<td class='v-align-middle text-center'>
+                        <div class='form-group' style='margin: 0;'>
+                          <input type='radio' value='$i' name='$name' class='radio-big rating-radio' " . ($grade != null && $i == $grade ? "checked" : "") . " required>
+                        </div>
+                      </td>");
+  }
+
+  return implode("\n", $tds);
+}
+
+function editActivity()
+{
+  global $con, $_POST;
+
+  $query = mysqli_query(
+    $con,
+    "UPDATE attendance SET activity='" . (nl2br($_POST["did"])) . "' WHERE attendance_id='$_POST[attendanceId]'"
+  );
+
+  if ($query) {
+    $response["success"] = true;
+    $response["message"] = "Activity successfully updated.";
+  } else {
+    $response["success"] = false;
+    $response["message"] = mysqli_error($con);
+  }
+
+  returnResponse($response);
+}
+
+function getTotalAndRemainingTime($userId)
+{
+  global $con;
+
+  $query = mysqli_query(
+    $con,
+    "SELECT * FROM users u INNER JOIN attendance a ON u.id = a.user_id WHERE a.time_in is NOT NULL and a.time_out is NOT NULL and u.role = 'student' and id='$userId'"
+  );
+
+  $hours = 0;
+  $mins = 0;
+  $secs = 0;
+  $totalTime = 0;
+
+  $arr = array(
+    "rendered" => "",
+    "remaining" => ""
+  );
+
+  while ($row = mysqli_fetch_object($query)) {
+    $diff = dateDiff("$row->date $row->time_in", "$row->date $row->time_out");
+    $hoursInSecs = $diff['hours'] * 60 * 60;
+    $minsInSecs = $diff['minutes'] * 60;
+
+    $totalTime += $hoursInSecs + $minsInSecs + $diff['seconds'];
+  }
+  $hours = intval($totalTime / 3600);
+  $totalTime = $totalTime - ($hours * 3600);
+  $mins = intval($totalTime / 60);
+  $secs = $totalTime - ($mins * 60);
+
+  $arr["rendered"] = "$hours hrs $mins mins $secs secs";
+
+  $getTotalHours = mysqli_fetch_object(
+    mysqli_query(
+      $con,
+      "SELECT * FROM setting"
+    )
+  )->hours - 1;
+
+  $remainHours = $getTotalHours < 0 ? 0 : $getTotalHours;
+  $remainMin = 59;
+  $remainSec = 60;
+
+  if ($secs != 0) {
+    $remainSec -= $secs;
+  }
+
+  if ($mins != 0) {
+    $remainMin -= $mins;
+  }
+
+  if ($hours != 0) {
+    $remainHours -= $hours;
+  }
+  $arr["remaining"] = "$remainHours hrs $remainMin mins $remainSec secs";
+
+  return $arr;
+}
+
+function getLineChartData($currentUser = null)
+{
+  global $con;
+
+  $query = mysqli_query(
+    $con,
+    "SELECT * FROM attendance a INNER JOIN users u ON a.user_id = u.id " . ($currentUser != null && $currentUser->role == "admin" && $currentUser->office_account_id != null ? "WHERE u.deployment_id='$currentUser->office_account_id'" : "") . ""
+  );
+  $error = mysqli_error($con);
+
+  $data = array();
+
+  while ($row = mysqli_fetch_object($query)) {
+    array_push($data, $row);
+  }
+
+  return $data;
+}
+
+function getTotalTimeOut($currentUser = null)
+{
+  global $con;
+
+  $dateNow = date("Y-m-d");
+
+  $query = mysqli_query(
+    $con,
+    "SELECT * FROM attendance a INNER JOIN users u ON a.user_id=u.id WHERE u.role='student' and a.date='$dateNow' and a.time_out is NOT NULL " . ($currentUser != null && $currentUser->role == "admin" && $currentUser->office_account_id != null ? " and u.deployment_id='$currentUser->office_account_id'" : "") . ""
+  );
+
+  if (mysqli_num_rows($query) > 0) {
+    return mysqli_num_rows($query);
+  }
+
+  return 0;
+}
+
+function getTotalTimeIn($currentUser = null)
+{
+  global $con;
+
+  $dateNow = date("Y-m-d");
+
+  $query = mysqli_query(
+    $con,
+    "SELECT * FROM attendance a INNER JOIN users u ON a.user_id=u.id WHERE u.role='student' and a.date='$dateNow' " . ($currentUser != null && $currentUser->role == "admin" && $currentUser->office_account_id != null ? " and u.deployment_id='$currentUser->office_account_id'" : "") . ""
+  );
+
+  if (mysqli_num_rows($query) > 0) {
+    return mysqli_num_rows($query);
+  }
+
+  return 0;
+}
+
+function getAdminCount()
+{
+  global $con;
+
+  $query = mysqli_query(
+    $con,
+    "SELECT * FROM users WHERE role='admin'"
+  );
+
+  if (mysqli_num_rows($query) > 0) {
+    return mysqli_num_rows($query);
+  }
+
+  return 0;
+}
+
+function getStudentCount($currentUser = null)
+{
+  global $con;
+
+  $query = mysqli_query(
+    $con,
+    "SELECT * FROM users WHERE role='student'" . ($currentUser != null && $currentUser->role == "admin" && $currentUser->office_account_id != null ? " and deployment_id='$currentUser->office_account_id'" : "") . ""
+  );
+
+  if (mysqli_num_rows($query) > 0) {
+    return mysqli_num_rows($query);
+  }
+
+  return 0;
+}
+
+function dateDiff($start, $end)
+{
+  $date1 = strtotime($start);
+  $date2 = strtotime($end);
+
+  $diff = abs($date2 - $date1);
+
+
+  $years = floor($diff / (365 * 60 * 60 * 24));
+
+
+  $months = floor(($diff - $years * 365 * 60 * 60 * 24)
+    / (30 * 60 * 60 * 24));
+
+
+  $days = floor(($diff - $years * 365 * 60 * 60 * 24 -
+    $months * 30 * 60 * 60 * 24) / (60 * 60 * 24));
+
+
+  $hours = floor(($diff - $years * 365 * 60 * 60 * 24
+    - $months * 30 * 60 * 60 * 24 - $days * 60 * 60 * 24)
+    / (60 * 60));
+
+
+  $minutes = floor(($diff - $years * 365 * 60 * 60 * 24
+    - $months * 30 * 60 * 60 * 24 - $days * 60 * 60 * 24
+    - $hours * 60 * 60) / 60);
+
+
+  $seconds = floor(($diff - $years * 365 * 60 * 60 * 24
+    - $months * 30 * 60 * 60 * 24 - $days * 60 * 60 * 24
+    - $hours * 60 * 60 - $minutes * 60));
+
+  return (array(
+    "year" => $years,
+    "months" => $months,
+    "days" => $days,
+    "hours" => $hours,
+    "minutes" => $minutes,
+    "seconds" => $seconds
+  ));
+}
+
+function timeOut()
+{
+  global $con, $_POST;
+
+  $userId = $_POST["userId"];
+  $did = nl2br($_POST["did"]);
+
+  $getAttendanceQ = mysqli_query(
+    $con,
+    "SELECT * FROM attendance WHERE `user_id`='$userId' and activity is NULL and time_out is NULL"
+  );
+
+  $query = null;
+
+  while ($row = mysqli_fetch_object($getAttendanceQ)) {
+    $dbTimeInDate = $row->date;
+    $dbTimeInTime = $row->time_in;
+    $dateNow = date("Y-m-d");
+
+    if ($dbTimeInDate == $dateNow) {
+      $timeOutTime = date("H:i:s");
+      $query = mysqli_query(
+        $con,
+        "UPDATE attendance SET time_out='$timeOutTime', activity='$did' WHERE attendance_id='$row->attendance_id'"
+      );
+    } else {
+      $timeOutTime = date("H:i:s", strtotime("$dbTimeInDate $dbTimeInTime" . " +8 hours"));
+      $query = mysqli_query(
+        $con,
+        "UPDATE attendance SET time_out='$timeOutTime', activity='No Time out' WHERE attendance_id='$row->attendance_id'"
+      );
+    }
+  }
+
+  if ($query) {
+    $response["success"] = true;
+    $response["message"] = "Successfully time out.";
+  } else {
+    $response["success"] = false;
+    $response["message"] = mysqli_error($con);
+  }
+
+  returnResponse($response);
 }
 
 function uploadTimeInImg()

@@ -40,6 +40,14 @@ $links = array(
     "url" => "$SERVER_NAME/pages/$role/attendance",
     "allowedViews" => array("admin"),
     "config" => array(
+      "icon" => "clock-fill"
+    )
+  ),
+  array(
+    "title" => "Students",
+    "url" => "$SERVER_NAME/pages/$role/deployed-list",
+    "allowedViews" => array("admin"),
+    "config" => array(
       "icon" => "people-fill"
     )
   ),
@@ -48,9 +56,17 @@ $links = array(
     "url" => "$SERVER_NAME/pages/dtr",
     "allowedViews" => array("super-admin", "admin", "student"),
     "config" => array(
-      "icon" => "clock-fill"
+      "icon" => "folder-fill"
     )
   ),
+  // array(
+  //   "title" => "Rating",
+  //   "url" => "$SERVER_NAME/pages/$role/rating.php",
+  //   "allowedViews" => array("admin"),
+  //   "config" => array(
+  //     "icon" => "star-fill"
+  //   )
+  // ),
   array(
     "title" => "Settings",
     "url" => "$SERVER_NAME/pages/$role/settings",

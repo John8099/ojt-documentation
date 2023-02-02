@@ -44,6 +44,9 @@ if ($user->mname != null) {
 
   <!-- Template Main CSS File -->
   <link href="../../assets/css/style.css" rel="stylesheet">
+  <!-- summernote -->
+  <link rel="stylesheet" href="../../assets/vendor/summernote/summernote-bs4.min.css">
+
 </head>
 
 <body>
@@ -84,6 +87,7 @@ if ($user->mname != null) {
                     "SELECT * FROM users WHERE `role` = 'student' and deployment_id='$user->office_account_id'"
                   );
                   while ($row = mysqli_fetch_object($query)) :
+                    $name = ucwords("$row->fname " . ($row->mname ? $row->mname[0] . "." : "") . " $row->lname");
                     $course = mysqli_fetch_object(
                       mysqli_query(
                         $con,
@@ -104,8 +108,8 @@ if ($user->mname != null) {
                       <td><?= "4-" . strtoupper($row->section) ?></td>
                       <td><?= $course->short_name ?></td>
                       <td class="text-center">
-                        <button class="btn btn-success m-1" type="button" onclick="handleTimeIn('<?= $row->id ?>')"> Time in</button>
-                        <button class="btn btn-warning m-1" type="button" onclick="handleTimeOut('<?= $row->id ?>')"> Time out</button>
+                        <button class="btn btn-success m-1" type="button" onclick="handleTimeIn('<?= $row->id ?>', '<?= $name ?>')"> Time in</button>
+                        <button class="btn btn-warning m-1" type="button" onclick="handleTimeOut('<?= $row->id ?>', '<?= $name ?>')"> Time out</button>
                       </td>
                     </tr>
                   <?php endwhile; ?>
@@ -117,11 +121,12 @@ if ($user->mname != null) {
       </div>
     </section>
   </main><!-- End #main -->
+
   <div class="modal fade" id="timeInModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered modal-fullscreen">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title">Time In</h5>
+          <h5 class="modal-title" id="timeInTitle">Time In</h5>
         </div>
         <div class="modal-body">
           <input type="text" name="userId" id="timeInUserId" hidden readonly>
@@ -145,11 +150,43 @@ if ($user->mname != null) {
     </div>
   </div>
 
+  <!-- Time out modal -->
+  <div class="modal fade" id="timeOutModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content">
+        <form method="POST" id="formTimeOut" novalidate>
+          <div class="modal-header">
+            <h5 class="modal-title" id="timeOutTitle">Time Out</h5>
+          </div>
+          <div class="modal-body">
+            <div class="form-group">
+              <input type="text" name="userId" id="timeOutUserId" hidden readonly>
+              <label class="control-label mb-2">
+                <h5>
+                  <strong>
+                    What you did this day?
+                  </strong>
+                </h5>
+              </label>
+              <textarea type="text" class="form-control form-control-sm summernote" name="did" required></textarea>
+            </div>
+
+          </div>
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-primary">Submit</button>
+            <button type="button" class="btn btn-danger" data-dismiss="modal">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
 
 </body>
 
 <!-- Vendor JS Files -->
 <script src="../../assets/vendor/jquery/jquery.min.js"></script>
+<script src="../../assets/vendor/jquery-validation/jquery.validate.min.js"></script>
 <script src="../../assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 <script src="../../assets/vendor/tinymce/tinymce.min.js"></script>
 
@@ -171,10 +208,98 @@ if ($user->mname != null) {
 <!-- Template Main JS File -->
 <script src="../../assets/js/main.js"></script>
 <script src="../../assets/js/swalGlobal.js"></script>
-
+<!-- Summernote -->
+<script src="../../assets/vendor/summernote/summernote-bs4.min.js"></script>
 <script>
+  $(document).ready(function() {
+    var summernoteForm = $('#formTimeOut');
+    var summernoteElement = $('.summernote');
+
+    var summernoteValidator = summernoteForm.validate({
+      errorClass: 'is-invalid',
+      validClass: 'is-valid',
+      ignore: ':hidden:not(.summernote),.note-editable.card-block',
+      errorElement: "span",
+      errorPlacement: function(error, element) {
+        error.addClass("invalid-feedback");
+        element.closest(".form-group").append(error);
+      },
+      highlight: function(element, errorClass, validClass) {
+        $(element).addClass("is-invalid");
+      },
+      unhighlight: function(element, errorClass, validClass) {
+        $(element).removeClass("is-invalid");
+      },
+    });
+
+    summernoteElement.summernote({
+      height: 200,
+      toolbar: [
+        ['style', ['style']],
+        ['font', ['bold', 'italic', 'underline', 'strikethrough', 'superscript', 'subscript', 'clear']],
+        ['fontname', ['fontname']],
+        ['fontsize', ['fontsize']],
+        ['color', ['color']],
+        ['para', ['ol', 'ul', 'paragraph', 'height']],
+        ['table', ['table']],
+        ['insert', ['link', 'picture']],
+        ['view', ['undo', 'redo', 'fullscreen', 'codeview', 'help']]
+      ],
+      callbacks: {
+        onChange: function(contents, $editable) {
+          summernoteElement.val(summernoteElement.summernote('isEmpty') ? "" : contents);
+          summernoteValidator.element(summernoteElement);
+        }
+      }
+    });
+  })
+
   const width = 500
   const height = 400
+
+  $("#formTimeOut").on("submit", function(e) {
+    if ($(this).valid()) {
+      showLoading();
+      $.post(
+        `../../backend/nodes?action=timeOut`,
+        $(this).serialize(),
+        (data, status) => {
+          const resp = JSON.parse(data)
+          swalAlert(
+            resp.success ? 'Success!' : 'Error!',
+            resp.message ? resp.message : "",
+            resp.success ? 'success' : 'error',
+            () => {
+              if (resp.success) {
+                $(`#timeOutModal`).modal({
+                  show: false
+                })
+                window.location.reload()
+              }
+            }
+          );
+        }).fail(function(e) {
+        swalAlert(
+          'Error!',
+          e.statusText,
+          'error'
+        );
+      });
+    }
+
+    e.preventDefault();
+  })
+
+  function handleTimeOut(userId, name) {
+    $("#timeOutTitle").html(`<strong>${name}</strong> Time Out`)
+    $("#timeOutUserId").val(userId)
+    $(`#timeOutModal`).modal({
+      show: true,
+      backdrop: 'static',
+      keyboard: false,
+      focus: true
+    })
+  }
 
   function take_snapshot() {
     Webcam.snap(function(data_uri) {
@@ -182,7 +307,8 @@ if ($user->mname != null) {
     });
   }
 
-  function handleTimeIn(userId) {
+  function handleTimeIn(userId, name) {
+    $("#timeInTitle").html(`<strong>${name}</strong> Time In`)
     $("#timeInUserId").val(userId)
     $(`#timeInModal`).modal({
       show: true,
@@ -208,7 +334,7 @@ if ($user->mname != null) {
   function saveSnap() {
     let base64image = $("#imagePrev").attr('src');
 
-    if (base64image) {
+    if (!base64image.includes("default-image.jpg")) {
       showLoading();
 
       Webcam.upload(base64image, '../../backend/nodes.php?action=uploadTimeInImg', function(code, img_resp) {

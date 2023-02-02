@@ -98,7 +98,7 @@
               return window.location.href = "pages/users-profile"
             },
             () => {
-              return window.location.href = resp.role == "student" ? "pages/student/" : "pages/admin/"
+              return window.location.href = resp.role == "student" ? "pages/dtr" : "pages/admin/"
             },
           )
         } else {
@@ -108,7 +108,7 @@
             resp.success ? 'success' : 'error',
             () => {
               if (resp.success) {
-                return window.location.href = resp.role == "student" ? "pages/student/" : "pages/admin/"
+                return window.location.href = resp.role == "student" ? "pages/dtr" : "pages/admin/"
               }
             }
           );
