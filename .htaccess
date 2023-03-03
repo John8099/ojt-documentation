@@ -6,9 +6,9 @@
 
   RewriteEngine on
   
-  ErrorDocument 403 http://%{HTTP_HOST}/ojt-documentation/error?403
-  ErrorDocument 404 http://%{HTTP_HOST}/ojt-documentation/error?404
-  ErrorDocument 500 http://%{HTTP_HOST}/ojt-documentation/error?500
+  # ErrorDocument 403 http://%{HTTP_HOST}/ojt-documentation/error?403
+  # ErrorDocument 404 http://%{HTTP_HOST}/ojt-documentation/error?404
+  # ErrorDocument 500 http://%{HTTP_HOST}/ojt-documentation/error?500
 
   RewriteCond %{REQUEST_FILENAME} !-d
   RewriteCond %{REQUEST_FILENAME}\.php -f

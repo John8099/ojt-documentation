@@ -1,6 +1,5 @@
 <?php
 $self = "http://{$_SERVER['SERVER_NAME']}{$_SERVER['REQUEST_URI']}";
-$role = $user->role == "student" ? "student" : "admin";
 
 $links = array(
   array(
@@ -44,6 +43,14 @@ $links = array(
     )
   ),
   array(
+    "title" => "Deploy Students",
+    "url" => "$SERVER_NAME/pages/$role/deploy-students",
+    "allowedViews" => array("super-admin"),
+    "config" => array(
+      "icon" => "person-rolodex"
+    )
+  ),
+  array(
     "title" => "Students",
     "url" => "$SERVER_NAME/pages/$role/deployed-list",
     "allowedViews" => array("admin"),
@@ -52,9 +59,25 @@ $links = array(
     )
   ),
   array(
+    "title" => "Evaluated Students",
+    "url" => "$SERVER_NAME/pages/$role/evaluated-students",
+    "allowedViews" => array("super-admin", "admin"),
+    "config" => array(
+      "icon" => "person-lines-fill"
+    )
+  ),
+  array(
     "title" => "DTR Records",
     "url" => "$SERVER_NAME/pages/dtr",
     "allowedViews" => array("super-admin", "admin", "student"),
+    "config" => array(
+      "icon" => "file-earmark-medical-fill"
+    )
+  ),
+  array(
+    "title" => "Forms",
+    "url" => "$SERVER_NAME/pages/forms",
+    "allowedViews" => array("student", "super-admin"),
     "config" => array(
       "icon" => "folder-fill"
     )

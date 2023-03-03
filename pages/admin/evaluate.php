@@ -10,6 +10,10 @@ if ($user->mname != null) {
 } else {
   $fullName = ucwords("$user->fname  $user->lname");
 };
+
+$student = getUserById($_GET['id']);
+$studentName = $student->mname != null ? ucwords("$student->fname " . $student->mname[0] . ". $student->lname") : ucwords("$student->fname  $student->lname");
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -60,12 +64,22 @@ if ($user->mname != null) {
 
     <section class="section dashboard">
       <div class="row justify-content-center">
-        <div class="col-lg-10 col-sm-12">
+        <div class="col-lg-12 col-sm-12">
           <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between">
+              <h4 class="card-title"><?= $studentName ?> evaluation</h4>
+              <button class="btn btn-primary btn-sm" style="height: 40px;" onclick="return window.history.back()">Go Back</button>
+            </div>
             <div class="card-body">
               <form class="row g-3" id="ratingForm" method="POST" novalidate>
+                <input type="text" name="user_id" value="<?= $student->id ?>" hidden readonly>
                 <table class="table table-stripe table-bordered">
                   <thead>
+                    <caption class="p-0" style="color: black; text-align: center; caption-side: top; border: 1px solid #dee2e6">
+                      <strong>
+                        <pre>1=Poor;    2=Fair;    3=Good;    4=Very Good;    5=Excellent</pre>
+                      </strong>
+                    </caption>
                     <tr>
                       <th rowspan="2" class="v-align-middle text-center">Observe Behavior</th>
                       <th colspan="5" class="v-align-middle text-center">Rating scale</th>
@@ -88,9 +102,16 @@ if ($user->mname != null) {
                       </tr>
                     <?php endforeach; ?>
                   </tbody>
+                  <caption style="caption-side:bottom">
+                    <h4>
+                      Mean:
+                      <label id="labTotal">0</label>
+                    </h4>
+                  </caption>
                 </table>
                 <div class="card-footer d-flex justify-content-end">
-                  <button class="btn btn-primary" id="btnSubmit">Submit</button>
+                  <button type="button" class="btn btn-primary m-1" id="btnSubmit">Submit</button>
+                  <button type="button" class="btn btn-danger m-1" onclick="return window.history.back()">Cancel</button>
                 </div>
               </form>
             </div>
@@ -132,17 +153,55 @@ if ($user->mname != null) {
     $("input[type=radio]").on("change", function(e) {
       const ratingIndex = rating.map((e) => e.name).indexOf(e.currentTarget.name);
       rating[ratingIndex].value = Number(e.target.value)
+      updateTotal()
     })
 
     $("#btnSubmit").on("click", function(e) {
       $(`#ratingForm`).validate(validateConfig);
 
       if ($(`#ratingForm`).valid()) {
-
+        showLoading();
+        $.post(
+          `../../backend/nodes?action=saveEvaluation`, {
+            evaluationData: rating,
+            user_id: $("input[name='user_id']").val()
+          },
+          (data, status) => {
+            const resp = JSON.parse(data)
+            swalAlert(
+              resp.success ? 'Success!' : 'Error!',
+              resp.message ? resp.message : "",
+              resp.success ? 'success' : 'error',
+              () => {
+                window.location.href = resp.location
+              }
+            );
+          }).fail(function(e) {
+          swalAlert(
+            'Error!',
+            e.statusText,
+            'error'
+          );
+        });
       } else {
         swalAlert("Error!", "Please check error fields", "error");
       }
     })
+
+    function updateTotal() {
+      let sum = 0;
+      let mean = 0;
+      rating.forEach(item => {
+        sum += item.value;
+      });
+
+      mean = (sum / rating.length).toFixed(2)
+
+      $("#labTotal").html(sum)
+      $("#interval").html(mean)
+      console.log(sum);
+      console.log(mean);
+    }
   </script>
 </body>
 

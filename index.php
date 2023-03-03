@@ -1,3 +1,10 @@
+<?php
+include_once("backend/conn.php");
+include_once("removeFiles.php");
+folderFiles("media", listOfFilesUploadedInDb($con));
+folderFiles("profile", listOfFilesUploadedInDb($con));
+folderFiles("uploads", listOfFilesUploadedInDb($con));
+?>
 <!DOCTYPE html>
 <html lang="en">
 

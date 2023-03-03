@@ -1,16 +1,22 @@
 <?php
-include_once("../../backend/nodes.php");
-if (!isset($_SESSION["id"])) {
-  header("location: ../../");
-}
-$user = getUserById($_SESSION['id']);
-$fullName = "";
-if ($user->mname != null) {
-  $fullName = ucwords("$user->fname " . $user->mname[0] . ". $user->lname");
-} else {
-  $fullName = ucwords("$user->fname  $user->lname");
-};
+include_once("../backend/nodes.php");
+$_SESSION = array();
 
+if (ini_get("session.use_cookies")) {
+  $params = session_get_cookie_params();
+  setcookie(
+    session_name(),
+    '',
+    time() - 42000,
+    $params["path"],
+    $params["domain"],
+    $params["secure"],
+    $params["httponly"]
+  );
+}
+
+session_destroy();
+$office_account_id = $_GET["office"];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -22,8 +28,8 @@ if ($user->mname != null) {
   <title>OJT Documentation</title>
 
   <!-- Favicons -->
-  <link href="../../assets/img/ojt.png" rel="icon">
-  <link href="../../assets/img/ojt.png" rel="apple-touch-icon">
+  <link href="../assets/img/ojt.png" rel="icon">
+  <link href="../assets/img/ojt.png" rel="apple-touch-icon">
 
 
   <!-- Google Fonts -->
@@ -31,116 +37,105 @@ if ($user->mname != null) {
   <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,300i,400,400i,600,600i,700,700i|Nunito:300,300i,400,400i,600,600i,700,700i|Poppins:300,300i,400,400i,500,500i,600,600i,700,700i" rel="stylesheet">
 
   <!-- Vendor CSS Files -->
-  <link href="../../assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
-  <link href="../../assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+  <link href="../assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link href="../assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
 
   <!-- DataTables -->
-  <link rel="stylesheet" href="../../assets/vendor/datatables-bs4/css/dataTables.bootstrap4.min.css">
-  <link rel="stylesheet" href="../../assets/vendor/datatables-responsive/css/responsive.bootstrap4.min.css">
-  <link rel="stylesheet" href="../../assets/vendor/datatables-buttons/css/buttons.bootstrap4.min.css">
+  <link rel="stylesheet" href="../assets/vendor/datatables-bs4/css/dataTables.bootstrap4.min.css">
+  <link rel="stylesheet" href="../assets/vendor/datatables-responsive/css/responsive.bootstrap4.min.css">
+  <link rel="stylesheet" href="../assets/vendor/datatables-buttons/css/buttons.bootstrap4.min.css">
 
   <link rel="stylesheet" href="https://cdn.datatables.net/searchbuilder/1.3.4/css/searchBuilder.dataTables.min.css">
-  <link rel="stylesheet" href="../../assets/vendor/datatables-datetime/css/dataTables.dateTime.min.css">
+  <link rel="stylesheet" href="../assets/vendor/datatables-datetime/css/dataTables.dateTime.min.css">
 
   <!-- Template Main CSS File -->
-  <link href="../../assets/css/style.css" rel="stylesheet">
+  <link href="../assets/css/style.css" rel="stylesheet">
   <!-- summernote -->
-  <link rel="stylesheet" href="../../assets/vendor/summernote/summernote-bs4.min.css">
+  <link rel="stylesheet" href="../assets/vendor/summernote/summernote-bs4.min.css">
 
 </head>
 
 <body>
-
-  <!-- ======= Header ======= -->
-  <?php include_once("../../components/header.php"); ?>
-  <!-- End Header -->
-
-  <!-- ======= Sidebar ======= -->
-  <?php include_once("../../components/sidebar.php") ?>
-  <!-- End Sidebar-->
-
-  <main id="main" class="main">
-
-    <section class="section dashboard">
-      <div class="row">
-        <div class="col-lg-12">
-          <div class="card">
-            <div class="card-header d-flex justify-content-between">
-              <h4 class="card-title">Attendance</h4>
-            </div>
-            <div class="card-body">
-              <table id="studentTable" class=" table table-bordered table-hover table-striped">
-                <thead>
-                  <tr class="bg-dark text-white">
-                    <th>First name</th>
-                    <th>Middle name</th>
-                    <th>Last name</th>
-                    <th>Section</th>
-                    <th>Course</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <?php
-                  $query = mysqli_query(
-                    $con,
-                    "SELECT * FROM users WHERE `role` = 'student' and deployment_id='$user->office_account_id'"
+  <div class="container mt-5">
+    <div class="row">
+      <div class="col-lg-12">
+        <div class="card">
+          <div class="card-header d-flex justify-content-between">
+            <h4 class="card-title">Attendance</h4>
+            <button class="btn btn-primary" style="height: 40px;" onclick="return window.history.back()">Go back</button>
+          </div>
+          <div class="card-body">
+            <table id="studentTable" class=" table table-bordered table-hover table-striped">
+              <thead>
+                <tr class="bg-dark text-white">
+                  <th>First name</th>
+                  <th>Middle name</th>
+                  <th>Last name</th>
+                  <th>Section</th>
+                  <th>Course</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <?php
+                $query = mysqli_query(
+                  $con,
+                  "SELECT * FROM users WHERE `role` = 'student' and deployment_id='$office_account_id'"
+                );
+                while ($row = mysqli_fetch_object($query)) :
+                  $name = ucwords("$row->fname " . ($row->mname ? $row->mname[0] . "." : "") . " $row->lname");
+                  $course = mysqli_fetch_object(
+                    mysqli_query(
+                      $con,
+                      "SELECT * FROM course WHERE course_id='$row->course_id'"
+                    )
                   );
-                  while ($row = mysqli_fetch_object($query)) :
-                    $name = ucwords("$row->fname " . ($row->mname ? $row->mname[0] . "." : "") . " $row->lname");
-                    $course = mysqli_fetch_object(
-                      mysqli_query(
-                        $con,
-                        "SELECT * FROM course WHERE course_id='$row->course_id'"
-                      )
-                    );
-                    $office = mysqli_fetch_object(
-                      mysqli_query(
-                        $con,
-                        "SELECT * FROM office WHERE id='$row->deployment_id'"
-                      )
-                    );
-                  ?>
-                    <tr>
-                      <td><?= ucwords($row->fname) ?></td>
-                      <td><?= ucwords($row->mname) ?></td>
-                      <td><?= ucwords($row->lname) ?></td>
-                      <td><?= "4-" . strtoupper($row->section) ?></td>
-                      <td><?= $course->short_name ?></td>
-                      <td class="text-center">
-                        <?php
-                        $disabledAm = "disabled";
-                        $disabledPM = "disabled";
-                        if (date("a") == "am") {
-                          $disabledAm = "";
-                        }
-                        if (date("a") == "pm") {
-                          $disabledPM = "";
-                        }
-                        ?>
-                        <div class="row">
-                          <div class="col-12">
-                            <button class="btn btn-success m-1" type="button" onclick="handleTimeIn('<?= $row->id ?>', '<?= $name ?>')" <?= $disabledAm ?>> In AM</button>
-                            <button class="btn btn-warning m-1" type="button" onclick="handleTimeOut('<?= $row->id ?>', '<?= $name ?>')" <?= $disabledAm ?>> Out AM</button>
-                          </div>
+                  $office = mysqli_fetch_object(
+                    mysqli_query(
+                      $con,
+                      "SELECT * FROM office WHERE id='$row->deployment_id'"
+                    )
+                  );
+                ?>
+                  <tr>
+                    <td><?= ucwords($row->fname) ?></td>
+                    <td><?= ucwords($row->mname) ?></td>
+                    <td><?= ucwords($row->lname) ?></td>
+                    <td><?= "4-" . strtoupper($row->section) ?></td>
+                    <td><?= $course->short_name ?></td>
+                    <td class="text-center">
+                      <?php
+                      $disabledAm = "disabled";
+                      $disabledPM = "disabled";
+                      if (date("a") == "am") {
+                        $disabledAm = "";
+                      }
+                      if (date("a") == "pm") {
+                        $disabledPM = "";
+                      }
+                      ?>
+                      <div class="row">
+                        <div class="col-12">
+                          <button class="btn btn-success m-1" type="button" onclick="handleTimeIn('<?= $row->id ?>', '<?= $name ?>')" <?= $disabledAm ?>> In AM</button>
+                          <button class="btn btn-warning m-1" type="button" onclick="handleTimeOut('<?= $row->id ?>', '<?= $name ?>')" <?= $disabledAm ?>> Out AM</button>
                         </div>
-                        <div class="row">
-                          <div class="col-12">
-                            <button class="btn btn-success m-1" type="button" onclick="handleTimeIn('<?= $row->id ?>', '<?= $name ?>')" <?= $disabledPM ?>> In PM</button>
-                            <button class="btn btn-warning m-1" type="button" onclick="handleTimeOut('<?= $row->id ?>', '<?= $name ?>')" <?= $disabledPM ?>> Out PM</button>
-                          </div>
+                      </div>
+                      <div class="row">
+                        <div class="col-12">
+                          <button class="btn btn-success m-1" type="button" onclick="handleTimeIn('<?= $row->id ?>', '<?= $name ?>')" <?= $disabledPM ?>> In PM</button>
+                          <button class="btn btn-warning m-1" type="button" onclick="handleTimeOut('<?= $row->id ?>', '<?= $name ?>')" <?= $disabledPM ?>> Out PM</button>
                         </div>
-                      </td>
-                    </tr>
-                  <?php endwhile; ?>
-                </tbody>
-              </table>
-            </div>
+                      </div>
+                    </td>
+                  </tr>
+                <?php endwhile; ?>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
-    </section>
-  </main><!-- End #main -->
+    </div>
+  </div>
 
   <div class="modal fade" id="timeInModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered modal-fullscreen">
@@ -156,7 +151,7 @@ if ($user->mname != null) {
             </div>
             <div class="col-6  d-flex justify-content-center align-items-center">
               <div id="captured">
-                <img id="imagePrev" src="../../assets/img/default-image.jpg" style="width: 500px; height: 400px; padding: 10px 0px;">
+                <img id="imagePrev" src="../assets/img/default-image.jpg" style="width: 500px; height: 400px; padding: 10px 0px;">
               </div>
             </div>
           </div>
@@ -188,7 +183,7 @@ if ($user->mname != null) {
                   </strong>
                 </h5>
               </label>
-              <textarea type="text" class="form-control form-control-sm summernote" name="did" ></textarea>
+              <textarea type="text" class="form-control form-control-sm summernote" name="did"></textarea>
             </div>
 
           </div>
@@ -205,33 +200,45 @@ if ($user->mname != null) {
 </body>
 
 <!-- Vendor JS Files -->
-<script src="../../assets/vendor/jquery/jquery.min.js"></script>
-<script src="../../assets/vendor/jquery-validation/jquery.validate.min.js"></script>
-<script src="../../assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-<script src="../../assets/vendor/tinymce/tinymce.min.js"></script>
+<script src="../assets/vendor/jquery/jquery.min.js"></script>
+<script src="../assets/vendor/jquery-validation/jquery.validate.min.js"></script>
+<script src="../assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="../assets/vendor/tinymce/tinymce.min.js"></script>
 
-<script src="../../assets/vendor/sweetalert2/sweetalert2.all.min.js"></script>
+<script src="../assets/vendor/sweetalert2/sweetalert2.all.min.js"></script>
 
 <!-- DataTables  & Plugins -->
-<script src="../../assets/vendor/datatables/jquery.dataTables.min.js"></script>
-<script src="../../assets/vendor/datatables-bs4/js/dataTables.bootstrap4.min.js"></script>
-<script src="../../assets/vendor/datatables-responsive/js/dataTables.responsive.min.js"></script>
-<script src="../../assets/vendor/datatables-responsive/js/responsive.bootstrap4.min.js"></script>
-<script src="../../assets/vendor/datatables-buttons/js/dataTables.buttons.min.js"></script>
-<script src="../../assets/vendor/datatables-buttons/js/buttons.bootstrap4.min.js"></script>
+<script src="../assets/vendor/datatables/jquery.dataTables.min.js"></script>
+<script src="../assets/vendor/datatables-bs4/js/dataTables.bootstrap4.min.js"></script>
+<script src="../assets/vendor/datatables-responsive/js/dataTables.responsive.min.js"></script>
+<script src="../assets/vendor/datatables-responsive/js/responsive.bootstrap4.min.js"></script>
+<script src="../assets/vendor/datatables-buttons/js/dataTables.buttons.min.js"></script>
+<script src="../assets/vendor/datatables-buttons/js/buttons.bootstrap4.min.js"></script>
 
-<script src="../../assets/vendor/datatables-searchbuilder/js/dataTables.searchBuilder.js"></script>
-<script src="../../assets/vendor/datatables-datetime/js/dataTables.dateTime.min.js"></script>
+<script src="../assets/vendor/datatables-searchbuilder/js/dataTables.searchBuilder.js"></script>
+<script src="../assets/vendor/datatables-datetime/js/dataTables.dateTime.min.js"></script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/webcamjs/1.0.25/webcam.min.js"></script>
 
 <!-- Template Main JS File -->
-<script src="../../assets/js/main.js"></script>
-<script src="../../assets/js/swalGlobal.js"></script>
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/swalGlobal.js"></script>
 <!-- Summernote -->
-<script src="../../assets/vendor/summernote/summernote-bs4.min.js"></script>
+<script src="../assets/vendor/summernote/summernote-bs4.min.js"></script>
 <script>
   $(document).ready(function() {
+    $(".container").hide()
+    const referrer = document.referrer;
+    if (!document.referrer.includes('admin') && !document.referrer.includes("student-attendance") && !document.referrer.includes("dtr")) {
+      swalAlert(
+        'Warning!',
+        "You are not allowed to view this page",
+        'error',
+        () => window.history.back()
+      );
+    } else {
+      $(".container").show()
+    }
     var summernoteForm = $('#formTimeOut');
     var summernoteElement = $('.summernote');
 
@@ -281,7 +288,7 @@ if ($user->mname != null) {
     if ($(this).valid()) {
       showLoading();
       $.post(
-        `../../backend/nodes?action=timeOut`,
+        `../backend/nodes?action=timeOut`,
         $(this).serialize(),
         (data, status) => {
           const resp = JSON.parse(data)
@@ -348,7 +355,7 @@ if ($user->mname != null) {
 
   $('#timeInModal').on('hidden.bs.modal', function() {
     Webcam.reset();
-    $("#imagePrev").attr("src", "../../assets/img/default-image.jpg")
+    $("#imagePrev").attr("src", "../assets/img/default-image.jpg")
   })
 
   function saveSnap() {
@@ -357,10 +364,10 @@ if ($user->mname != null) {
     if (!base64image.includes("default-image.jpg")) {
       showLoading();
 
-      Webcam.upload(base64image, '../../backend/nodes.php?action=uploadTimeInImg', function(code, img_resp) {
+      Webcam.upload(base64image, '../backend/nodes.php?action=uploadTimeInImg', function(code, img_resp) {
         const imgResp = JSON.parse(img_resp);
         $.post(
-          `../../backend/nodes?action=timeIn`, {
+          `../backend/nodes?action=timeIn`, {
             userId: $("#timeInUserId").val(),
             imgUrl: imgResp.img_url
           },

@@ -40,6 +40,9 @@ if (isset($_GET['action'])) {
       case "updateUserData":
         updateUserData();
         break;
+      case "updateStudentPersonalData":
+        updateStudentPersonalData();
+        break;
       case "changePassword":
         changePassword();
         break;
@@ -55,8 +58,41 @@ if (isset($_GET['action'])) {
       case "timeOut":
         timeOut();
         break;
+      case "editTimeOut":
+        editTimeOut();
+        break;
       case "editActivity":
         editActivity();
+        break;
+      case "uploadProfile":
+        uploadProfile();
+        break;
+      case "removeProfile":
+        removeProfile();
+        break;
+      case "updateFamilyData":
+        updateFamilyData();
+        break;
+      case "updateEducationData":
+        updateEducationData();
+        break;
+      case "updateEmergencyData":
+        updateEmergencyData();
+        break;
+      case "saveUpload":
+        saveUpload();
+        break;
+      case "saveEvaluation":
+        saveEvaluation();
+        break;
+      case "getNotificationCount":
+        getNotificationCount();
+        break;
+      case "updateNotificationCount":
+        updateNotificationCount();
+        break;
+      case "getNotificationData":
+        getNotificationData();
         break;
       default:
         null;
@@ -67,6 +103,361 @@ if (isset($_GET['action'])) {
     $response["message"] = $e->getMessage();
   }
 }
+
+function getNotificationData()
+{
+  global $con, $_SESSION, $SERVER_NAME;
+
+  $notificationQ = mysqli_query(
+    $con,
+    "SELECT * FROM `notification` WHERE admin_id='$_SESSION[id]' ORDER BY notification_id DESC LIMIT 5"
+  );
+
+  $html = '';
+  if (mysqli_num_rows($notificationQ) > 0) {
+    while ($notificationData = mysqli_fetch_object($notificationQ)) {
+      $studentData = getUserById($notificationData->user_id);
+      $studentFullName = "";
+      if ($studentData->mname != null) {
+        $studentFullName = ucwords("$studentData->fname " . $studentData->mname[0] . ". $studentData->lname");
+      } else {
+        $studentFullName = ucwords("$studentData->fname  $studentData->lname");
+      };
+
+      $html .= "
+      <li>
+        <hr class='dropdown-divider'>
+      </li>
+      <li class='notification-item " . ($notificationData->unread == 0 ? 'active' : '') . "'>
+        <div style='margin-right: 10px;'>
+          <img src='$SERVER_NAME/profile/" . ($studentData->avatar ? $studentData->avatar : 'default.png') . "' alt='Profile' class='rounded-circle' style='width: 50px'>
+        </div>
+        <div>
+          <h4>$studentFullName</h4>
+          <p>$notificationData->notification</p>
+          <p>" . get_time_ago(strtotime($notificationData->createdAt)) . "</p>
+        </div>
+      </li>
+      <li>
+        <hr class='dropdown-divider'>
+      </li>
+      ";
+    }
+  } else {
+    $html = "<li class='notification-item justify-content-center align-items-center'>
+    <h4>No notifications yet</h4>
+  </li>";
+  }
+
+  $html .= "
+    <li class='dropdown-footer'>
+      <a href='./notifications' class='btn btn-link btn-sm'>Show all notifications</a>
+    </li>";
+
+  echo ($html);
+}
+
+function updateNotificationCount()
+{
+  global $con, $_SESSION;
+
+  $query = mysqli_query(
+    $con,
+    "UPDATE `notification` SET unread='1' WHERE admin_id='$_SESSION[id]'"
+  );
+}
+
+function getNotificationCount()
+{
+  global $con, $_SESSION;
+
+  $query = mysqli_query(
+    $con,
+    "SELECT * FROM `notification` WHERE admin_id='$_SESSION[id]' and unread='0'"
+  );
+
+  $count = mysqli_num_rows($query);
+
+  print_r($count == 0 ? null : $count);
+}
+
+function saveUpload()
+{
+  global $con, $_POST, $_FILES, $_SESSION;
+
+  $uploadType = $_POST['uploadType'];
+  $target_dir = "../uploads/$_SESSION[id]/";
+
+  $queryStr = "";
+  $action = "insert";
+  if ($uploadType == "journal") {
+    $fileName = saveFile($_FILES["pdfFile"], $target_dir);
+
+    if ($fileName) {
+      $queryStr = "INSERT INTO forms(user_id, file_name, form_type) VALUES('$_SESSION[id]', '$fileName' ,'$uploadType')";
+    }
+  } else {
+    $fileName = saveFile($_FILES["pdfFile"], $target_dir);
+
+    $formQ = mysqli_query(
+      $con,
+      "SELECT * FROM forms WHERE user_id='$_SESSION[id]' and form_type <> 'journal' and form_type='$uploadType'"
+    );
+
+    if (mysqli_num_rows($formQ) > 0) {
+      $queryStr = "UPDATE forms SET file_name='$fileName' WHERE user_id='$_SESSION[id]' and form_type='$uploadType'";
+      $action = "update";
+    } else {
+      if ($fileName) {
+        $queryStr = "INSERT INTO forms(user_id, file_name, form_type) VALUES('$_SESSION[id]', '$fileName' ,'$uploadType')";
+      }
+    }
+  }
+
+  $comm = mysqli_query($con, $queryStr);
+
+  if ($comm) {
+    $response["success"] = true;
+    if ($action == "insert") {
+      $response["message"] = "Form successfully uploaded";
+
+      $notification = "submitted " . getFormName($uploadType);
+      saveNotification($notification, $_SESSION["id"]);
+    } else {
+      $response["message"] = "Form successfully updated";
+
+      $notification = "updated " . getFormName($uploadType);
+      saveNotification($notification, $_SESSION["id"]);
+    }
+  } else {
+    $response["success"] = false;
+    $response["message"] = mysqli_error($con);
+  }
+
+  returnResponse($response);
+}
+
+function getFormName($id)
+{
+  switch ($id) {
+    case "applicationLetter":
+      return "Application Letter";
+      break;
+    case "endorsement":
+      return "Endorsement Letter";
+      break;
+    case "cv":
+      return "Curriculum Vitae";
+      break;
+    case "journal":
+      return "Journal of Daily Activities";
+      break;
+    case "waiver":
+      return "Waiver";
+      break;
+    default:
+      return "Form";
+      null;
+  }
+}
+
+function get_time_ago($time)
+{
+  $time_difference = time() - $time;
+
+  if ($time_difference < 1) {
+    return 'less than 1 second ago';
+  }
+  $condition = array(
+    12 * 30 * 24 * 60 * 60 =>  'year',
+    30 * 24 * 60 * 60       =>  'month',
+    24 * 60 * 60            =>  'day',
+    60 * 60                 =>  'hour',
+    60                      =>  'minute',
+    1                       =>  'second'
+  );
+
+  foreach ($condition as $secs => $str) {
+    $d = $time_difference / $secs;
+
+    if ($d >= 1) {
+      $t = round($d);
+      return $t . ' ' . $str . ($t > 1 ? 's' : '') . ' ago';
+    }
+  }
+}
+
+function saveNotification($notification, $user_id)
+{
+  global $con;
+
+  $admins = getAdminIds($user_id);
+
+  foreach ($admins as $adminId) {
+    mysqli_query(
+      $con,
+      "INSERT INTO `notification`(user_id, admin_id, `notification`, unread) VALUES('$user_id', '$adminId', '$notification', 'false')"
+    );
+  }
+}
+
+function getAdminIds($user_id)
+{
+  global $con;
+
+  $user = getUserById($user_id);
+
+  $ids = [];
+
+  $superAdminQ = mysqli_query(
+    $con,
+    "SELECT * FROM users WHERE `role`='super-admin'"
+  );
+
+  if (mysqli_num_rows($superAdminQ) > 0) {
+    while ($admin = mysqli_fetch_object($superAdminQ)) {
+      array_push($ids, $admin->id);
+    }
+  }
+
+  $adminsQ = mysqli_query(
+    $con,
+    "SELECT * FROM users WHERE `role`='admin' and office_account_id='$user->deployment_id'"
+  );
+
+  if (mysqli_num_rows($adminsQ) > 0) {
+    while ($admin = mysqli_fetch_object($adminsQ)) {
+      array_push($ids, $admin->id);
+    }
+  }
+
+  return $ids;
+}
+
+function saveFile($file, $target_dir)
+{
+  $fileName = null;
+  if (intval($file["error"]) == 0) {
+    $uploadFile = date("mdY-his") . "_" . basename($file['name']);
+
+    if (!is_dir($target_dir)) {
+      mkdir($target_dir, 0777, true);
+    }
+
+    if (move_uploaded_file($file['tmp_name'], "$target_dir/$uploadFile")) {
+      $fileName = $uploadFile;
+    }
+  }
+  return $fileName;
+}
+
+function hasUploaded($user_id, $uploadType)
+{
+}
+
+function saveEvaluation()
+{
+  global $con, $_POST, $_SESSION;
+
+  $evaluation_id = isset($_POST["evaluation_id"]) ? $_POST["evaluation_id"] : null;
+
+  $evaluation = json_encode($_POST["evaluationData"]);
+
+  if ($evaluation_id) {
+    $query = mysqli_query(
+      $con,
+      "UPDATE evaluation SET evaluation ='$evaluation' WHERE evaluation_id='$evaluation_id'"
+    );
+  } else {
+    $adminId = $_SESSION['id'];
+    $user_id = $_POST['user_id'];
+
+    $query = mysqli_query(
+      $con,
+      "INSERT INTO evaluation(admin_id, user_id, evaluation) VALUES('$adminId', '$user_id', '$evaluation')"
+    );
+  }
+  if ($query) {
+    $response["success"] = true;
+
+    if ($evaluation_id) {
+      $response["message"] = "Student evaluation updated successfully.";
+      $response["location"] = "./evaluated-students.php";
+    } else {
+      $response["message"] = "Student evaluated successfully.";
+      $response["location"] = "./deployed-list";
+    }
+  } else {
+    $response["success"] = false;
+    $response["message"] = mysqli_error($con);
+  }
+
+  returnResponse($response);
+}
+
+function removeProfile()
+{
+  global $con, $SERVER_NAME, $_SESSION;
+  $user = getUserById($_SESSION["id"]);
+
+  $response["success"] = false;
+
+  if (unlink("../profile/$user->avatar")) {
+    $query = mysqli_query(
+      $con,
+      "UPDATE users SET avatar=NULL WHERE id='$user->id'"
+    );
+
+    if ($query) {
+      $response["success"] = true;
+      $response["img_url"] = "$SERVER_NAME/profile/default.png";
+    }
+  }
+
+  returnResponse($response);
+}
+
+function uploadProfile()
+{
+  global $con, $_FILES, $SERVER_NAME, $_SESSION;
+
+  $response["success"] = false;
+  $file = $_FILES["inputProfile"];
+
+  if (intval($file["error"]) == 0) {
+    $uploadFile = date("mdY-his") . "_" . basename($file['name']);
+    $target_dir = "../profile/";
+
+    if (!is_dir($target_dir)) {
+      mkdir($target_dir, 0777, true);
+    }
+
+    if (move_uploaded_file($file['tmp_name'], "$target_dir/$uploadFile")) {
+      $user = getUserById($_SESSION["id"]);
+
+      $query = mysqli_query(
+        $con,
+        "UPDATE users SET avatar='$uploadFile' WHERE id='$user->id'"
+      );
+
+      $error = mysqli_error($con);
+
+      if ($query) {
+        $response["success"] = true;
+        $response["img_url"] = "$SERVER_NAME/profile/$uploadFile";
+        if ($user->avatar) {
+          unlink("$target_dir/$user->avatar");
+        }
+      } else {
+        $response["success"] = false;
+        unlink("$target_dir/$uploadFile");
+      }
+    }
+  }
+
+  returnResponse($response);
+}
+
 function ratingBehavior()
 {
   return json_encode(
@@ -209,9 +600,11 @@ function editActivity()
 {
   global $con, $_POST;
 
+  $did = nl2br($_POST["did"]);
+
   $query = mysqli_query(
     $con,
-    "UPDATE attendance SET activity='" . (nl2br($_POST["did"])) . "' WHERE attendance_id='$_POST[attendanceId]'"
+    "UPDATE attendance SET activity='$did' WHERE attendance_id='$_POST[attendanceId]'"
   );
 
   if ($query) {
@@ -415,6 +808,29 @@ function dateDiff($start, $end)
   ));
 }
 
+function editTimeOut()
+{
+  global $con, $_POST;
+
+  $attendance_id = $_POST["attendance_id"];
+  $time_out = $_POST["time_out"];
+
+  $query = mysqli_query(
+    $con,
+    "UPDATE attendance SET time_out='$time_out', activity='Time out updated by administrator' WHERE attendance_id='$attendance_id'"
+  );
+
+  if ($query) {
+    $response["success"] = true;
+    $response["message"] = "Time out successfully updated";
+  } else {
+    $response["success"] = false;
+    $response["message"] = mysqli_error($con);
+  }
+
+  returnResponse($response);
+}
+
 function timeOut()
 {
   global $con, $_POST;
@@ -441,10 +857,10 @@ function timeOut()
         "UPDATE attendance SET time_out='$timeOutTime', activity='$did' WHERE attendance_id='$row->attendance_id'"
       );
     } else {
-      $timeOutTime = date("H:i:s", strtotime("$dbTimeInDate $dbTimeInTime" . " +8 hours"));
+      // $timeOutTime = date("H:i:s", strtotime("$dbTimeInDate $dbTimeInTime" . " +8 hours"));
       $query = mysqli_query(
         $con,
-        "UPDATE attendance SET time_out='$timeOutTime', activity='No Time out' WHERE attendance_id='$row->attendance_id'"
+        "UPDATE attendance SET activity='No Time out' WHERE attendance_id='$row->attendance_id'"
       );
     }
   }
@@ -492,10 +908,12 @@ function timeIn()
   $userId = $_POST["userId"];
   $imgUrl = $_POST["imgUrl"];
 
+  $logType = strtoupper(date("A"));
+
   if (!isTimeIn($userId)) {
     $query = mysqli_query(
       $con,
-      "INSERT INTO attendance(`user_id`, `date`, time_in, `image`) VALUES('$userId', '$dateNow', '$timeNow', '$imgUrl')"
+      "INSERT INTO attendance(`user_id`, `date`, time_in, `image`, log_type) VALUES('$userId', '$dateNow', '$timeNow', '$imgUrl', '$logType')"
     );
 
     if ($query) {
@@ -524,7 +942,7 @@ function isTimeIn($user_id)
     "SELECT * FROM attendance WHERE `user_id`='$user_id' and `date`='$dateNow'"
   );
 
-  if (mysqli_num_rows($query) > 0) {
+  if (mysqli_num_rows($query) > 1) {
     return true;
   }
 }
@@ -617,14 +1035,84 @@ function validatePassword($user_id, $password, $confirm_password, $old_password)
   return json_encode($arr);
 }
 
+function updateStudentPersonalData()
+{
+  global $con, $_POST;
+
+  $id = $_POST["id"];
+
+  $fname = ucwords($_POST["fname"]);
+  $mname = ucwords($_POST["mname"]);
+  $lname = ucwords($_POST["lname"]);
+  $section = ucwords($_POST["section"]);
+  $course = $_POST["course"];
+  $contact = $_POST["contact"];
+  $date_of_birth = $_POST["date_of_birth"];
+  $place_of_birth = ucwords($_POST["place_of_birth"]);
+  $civil_status = ucwords($_POST["civil_status"]);
+  $gender = ucwords($_POST["gender"]);
+  $height = $_POST["height"];
+  $weight = $_POST["weight"];
+  $special_skills = ucwords($_POST["special_skills"]);
+  $physical_disability = ucwords($_POST["physical_disability"]);
+  $mental_disability = ucwords($_POST["mental_disability"]);
+  $criminal_liability = ucwords($_POST["criminal_liability"]);
+  $city_add = ucwords($_POST["city_add"]);
+  $prov_add = ucwords($_POST["prov_add"]);
+
+  $email = $_POST["email"];
+
+  if (!isEmailExist($email, $id)) {
+    $query = mysqli_query(
+      $con,
+      "UPDATE users SET 
+        fname='$fname',
+        lname='$lname',
+        mname='$mname',
+        contact='$contact',
+        city_address=" . ($city_add ? "'$city_add'" : "NULL") . ",
+        provincial_address=" . ($prov_add ? "'$prov_add'" : "NULL") . ",
+        date_of_birth='$date_of_birth',
+        place_of_birth='$place_of_birth',
+        civil_status='$civil_status',
+        gender='$gender',
+        height='$height',
+        `weight`='$weight',
+        special_skills='$special_skills',
+        special_skills='$special_skills',
+        physical_disability=" . ($physical_disability ? "'$physical_disability'" : "NULL") . ",
+        mental_disability=" . ($mental_disability ? "'$mental_disability'" : "NULL") . ",
+        criminal_liability=" . ($criminal_liability ? "'$criminal_liability'" : "NULL") . ",
+        email='$email',
+        section='$section',
+        course_id='$course'
+        WHERE 
+        id = '$id'
+      "
+    );
+    if ($query) {
+      $response["success"] = true;
+      $response["message"] = "Personal Data successfully updated";
+    } else {
+      $response["success"] = false;
+      $response["message"] = mysqli_error($con);
+    }
+  } else {
+    $response["success"] = false;
+    $response["message"] = "Email already exist";
+  }
+
+  returnResponse($response);
+}
+
 function updateUserData()
 {
   global $con, $_POST;
 
   $id = $_POST["id"];
-  $fname = $_POST["fname"];
-  $mname = $_POST["mname"];
-  $lname = $_POST["lname"];
+  $fname = ucwords($_POST["fname"]);
+  $mname = ucwords($_POST["mname"]);
+  $lname = ucwords($_POST["lname"]);
   $email = $_POST["email"];
 
   if (!isEmailExist($email, $id)) {
@@ -670,30 +1158,262 @@ function updateDeployment()
   returnResponse($response);
 }
 
+function updateFamilyData()
+{
+  global $con, $_POST;
+
+  $id = $_POST["id"];
+  $father = ucwords($_POST["father"]);
+  $father_occ = ucwords($_POST["father_occ"]);
+  $mother = ucwords($_POST["mother"]);
+  $mother_occ = ucwords($_POST["mother_occ"]);
+
+  $query = mysqli_query(
+    $con,
+    "UPDATE family_data SET father_name='$father', father_occupation='$father_occ', mother_name='$mother', mother_occupation='$mother_occ' WHERE user_id='$id'"
+  );
+
+  if ($query) {
+    $response["success"] = true;
+    $response["message"] = "Family data successfully updated";
+  } else {
+    $response["success"] = false;
+    $response["message"] = mysqli_error($con);
+  }
+
+  returnResponse($response);
+}
+
+function updateEducationData()
+{
+  global $con, $_POST;
+
+  $id = $_POST["id"];
+  $elementary = ucwords($_POST["elementary"]);
+  $elem_grad = $_POST["elem_grad"];
+  $secondary = ucwords($_POST["secondary"]);
+  $sec_grad = $_POST["sec_grad"];
+  $vocational = ucwords($_POST["vocational"]);
+  $voc_grad = $_POST["voc_grad"];
+  $college = ucwords($_POST["college"]);
+
+  $query = mysqli_query(
+    $con,
+    "UPDATE educational SET
+      elementary='$elementary',
+      elem_grad='$elem_grad',
+      `secondary`='$secondary',
+      sec_grad='$sec_grad',
+      vocational=" . ($vocational ? "'$vocational'" : "NULL") . ",
+      voc_grad=" . ($voc_grad ? "'$voc_grad'" : "NULL") . ",
+      college='$college'
+      WHERE user_id = '$id'
+    "
+  );
+
+  if ($query) {
+    $response["success"] = true;
+    $response["message"] = "Educational data successfully updated";
+  } else {
+    $response["success"] = false;
+    $response["message"] = mysqli_error($con);
+  }
+
+  returnResponse($response);
+}
+
+function updateEmergencyData()
+{
+  global $con, $_POST;
+
+  $id = $_POST["id"];
+  $name = ucwords($_POST["name"]);
+  $relationship = ucwords($_POST["relationship"]);
+  $address = ucwords($_POST["address"]);
+  $incase_contact = $_POST["incase_contact"];
+
+  $query = mysqli_query(
+    $con,
+    "UPDATE emergency_data SET `name`='$name', relationship='$relationship', `address`='$address', contact='$incase_contact' WHERE user_id = '$id'"
+  );
+
+  if ($query) {
+    $response["success"] = true;
+    $response["message"] = "Incase of Emergency data successfully updated";
+  } else {
+    $response["success"] = false;
+    $response["message"] = mysqli_error($con);
+  }
+
+  returnResponse($response);
+}
+
 function register()
 {
   global $con, $_POST;
 
-  $fname = $_POST["fname"];
-  $mname = $_POST["mname"];
-  $lname = $_POST["lname"];
-  $section = $_POST["section"];
+  // Personal Data
+  $fname = ucwords($_POST["fname"]);
+  $mname = ucwords($_POST["mname"]);
+  $lname = ucwords($_POST["lname"]);
+  $section = ucwords($_POST["section"]);
   $course = $_POST["course"];
   $office_id = isset($_POST["office_id"]) ? $_POST["office_id"] : null;
-  $email = $_POST["email"];
+  $contact = $_POST["contact"];
+  $date_of_birth = $_POST["date_of_birth"];
+  $place_of_birth = ucwords($_POST["place_of_birth"]);
+  $civil_status = ucwords($_POST["civil_status"]);
+  $gender = ucwords($_POST["gender"]);
+  $height = $_POST["height"];
+  $weight = $_POST["weight"];
+  $special_skills = ucwords($_POST["special_skills"]);
+  $physical_disability = ucwords($_POST["physical_disability"]);
+  $mental_disability = ucwords($_POST["mental_disability"]);
+  $criminal_liability = ucwords($_POST["criminal_liability"]);
+  $city_add = ucwords($_POST["city_add"]);
+  $prov_add = ucwords($_POST["prov_add"]);
 
+  // Incase of Emergency Data
+  $name = ucwords($_POST["name"]);
+  $relationship = ucwords($_POST["relationship"]);
+  $address = ucwords($_POST["address"]);
+  $incase_contact = $_POST["incase_contact"];
+
+  // Family Data
+  $father = ucwords($_POST["father"]);
+  $father_occ = ucwords($_POST["father_occ"]);
+  $mother = ucwords($_POST["mother"]);
+  $mother_occ = ucwords($_POST["mother_occ"]);
+
+  // Educational Data
+  $elementary = ucwords($_POST["elementary"]);
+  $elem_grad = $_POST["elem_grad"];
+  $secondary = ucwords($_POST["secondary"]);
+  $sec_grad = $_POST["sec_grad"];
+  $vocational = ucwords($_POST["vocational"]);
+  $voc_grad = $_POST["voc_grad"];
+  $college = ucwords($_POST["college"]);
+
+  $email = $_POST["email"];
   $password = password_hash($_POST["password"], PASSWORD_ARGON2I);
 
   if (!isEmailExist($email)) {
-    $query = mysqli_query(
-      $con,
-      "INSERT INTO users(fname, mname, lname, course_id, section, deployment_id, `role`, email, `password`) VALUES('$fname', '$mname', '$lname', '$course', '$section', '$office_id', 'student', '$email', '$password')"
-    );
+
+    $personalDataStr = "INSERT INTO
+                users(
+                  fname,
+                  lname,
+                  mname,
+                  contact,
+                  city_address,
+                  provincial_address,
+                  date_of_birth,
+                  place_of_birth,
+                  civil_status,
+                  gender,
+                  height,
+                  `weight`,
+                  special_skills,
+                  physical_disability,
+                  mental_disability,
+                  criminal_liability,
+                  email,
+                  `password`,
+                  course_id,
+                  section,
+                  deployment_id,
+                  `role`
+                ) VALUES (
+                  '$fname',
+                  '$lname',
+                  '$mname',
+                  '$contact',
+                  " . ($city_add ? "'$city_add'" : "NULL") . ",
+                  " . ($prov_add ? "'$prov_add'" : "NULL") . ",
+                  '$date_of_birth',
+                  '$place_of_birth',
+                  '$civil_status',
+                  '$gender',
+                  '$height',
+                  '$weight',
+                  '$special_skills',
+                  " . ($physical_disability ? "'$physical_disability'" : "NULL") . ",
+                  " . ($mental_disability ? "'$mental_disability'" : "NULL") . ",
+                  " . ($criminal_liability ? "'$criminal_liability'" : "NULL") . ",
+                  '$email',
+                  '$password',
+                  '$course',
+                  '$section',
+                  " . ($office_id ? "'$office_id'"  : "NULL") . ",
+                  'student'
+                )
+            ";
+
+    $query = mysqli_query($con, $personalDataStr);
 
     if ($query) {
       $response["success"] = true;
+      $user_id = mysqli_insert_id($con);
+
+      $other_query_str = "INSERT INTO 
+                          emergency_data(
+                            user_id, 
+                            `name`, 
+                            relationship, 
+                            `address`, 
+                            contact
+                          ) VALUE(
+                            '$user_id',
+                            '$name',
+                            '$relationship',
+                            '$address',
+                            '$incase_contact'
+                          );
+                          ";
+
+      $other_query_str .= "INSERT INTO
+                          family_data(
+                            user_id,
+                            father_name,
+                            father_occupation,
+                            mother_name,
+                            mother_occupation
+                          ) VALUES(
+                            '$user_id',
+                            '$father',
+                            '$father_occ',
+                            '$mother',
+                            '$mother_occ'
+                          );
+                          ";
+
+      $other_query_str .= "INSERT INTO 
+                          educational(
+                            user_id,
+                            elementary,
+                            elem_grad,
+                            `secondary`,
+                            sec_grad,
+                            vocational,
+                            voc_grad,
+                            college
+                          ) VALUES (
+                            '$user_id',
+                            '$elementary',
+                            '$elem_grad',
+                            '$secondary',
+                            '$sec_grad',
+                            " . ($vocational ? "'$vocational'" : "NULL") . ",
+                            " . ($voc_grad ? "'$voc_grad'" : "NULL") . ",
+                            '$college'
+                          );
+                          ";
+
+      $otherQueryComm = mysqli_multi_query($con, $other_query_str);
+
       $response["message"] = "Successfully registered. You can now login.";
     } else {
+      $error = mysqli_error($con);
       $response["success"] = false;
       $response["message"] = "Error occurred Please try again later.";
     }
@@ -785,9 +1505,9 @@ function addAdmin()
 {
   global $con, $_POST;
 
-  $fname = $_POST["fname"];
-  $mname = $_POST["mname"];
-  $lname = $_POST["lname"];
+  $fname = ucwords($_POST["fname"]);
+  $mname = ucwords($_POST["mname"]);
+  $lname = ucwords($_POST["lname"]);
   $office_id = $_POST["office_id"];
   $email = $_POST["email"];
 
@@ -941,6 +1661,65 @@ function getUserByEmail($email)
     mysqli_query(
       $con,
       "SELECT * FROM users WHERE email = '$email'"
+    )
+  );
+}
+
+function getUserFamilyData($user_id)
+{
+  global $con;
+  return mysqli_fetch_object(
+    mysqli_query(
+      $con,
+      "SELECT * FROM family_data WHERE user_id = '$user_id'"
+    )
+  );
+}
+
+function getUserEmergencyData($user_id)
+{
+  global $con;
+  return mysqli_fetch_object(
+    mysqli_query(
+      $con,
+      "SELECT * FROM emergency_data WHERE user_id = '$user_id'"
+    )
+  );
+}
+
+function getUserEducationData($user_id)
+{
+  global $con;
+  return mysqli_fetch_object(
+    mysqli_query(
+      $con,
+      "SELECT * FROM educational WHERE user_id = '$user_id'"
+    )
+  );
+}
+
+function getStudentFullData($id)
+{
+  global $con;
+  return mysqli_fetch_object(
+    mysqli_query(
+      $con,
+      "SELECT 
+      u.*,
+      f.*,
+      ed.*,
+      em.name,
+      em.relationship,
+      em.address,
+      em.contact AS incase_contact
+      FROM users u 
+      INNER JOIN family_data f 
+      ON u.id = f.user_id
+      INNER JOIN educational ed
+      ON u.id = ed.user_id
+      INNER JOIN emergency_data em
+      ON u.id = em.user_id
+      WHERE u.id='$id'"
     )
   );
 }

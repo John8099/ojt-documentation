@@ -67,17 +67,13 @@ if ($user->mname != null) {
           <div class="card">
             <div class="card-header d-flex justify-content-between">
               <h4 class="card-title">Students</h4>
-              <button class="btn btn-primary" style="height: 40px;" onclick="updateDeployment()">Update deployment</button>
             </div>
             <div class="card-body">
               <table id="studentTable" class=" table table-bordered table-hover table-striped">
                 <thead>
                   <tr class="bg-dark text-white">
-                    <th style="width: 30px;"></th>
-                    <th>Id</th>
-                    <th>First name</th>
-                    <th>Middle name</th>
-                    <th>Last name</th>
+                    <th>Avatar</th>
+                    <th>Full name</th>
                     <th>Section</th>
                     <th>Course</th>
                     <th>Deployment office</th>
@@ -88,7 +84,7 @@ if ($user->mname != null) {
                   <?php
                   $query = mysqli_query(
                     $con,
-                    "SELECT * FROM users WHERE `role` = 'student'"
+                    "SELECT * FROM users WHERE `role` = 'student' <> 'NULL'"
                   );
                   while ($row = mysqli_fetch_object($query)) :
                     $course = mysqli_fetch_object(
@@ -103,13 +99,17 @@ if ($user->mname != null) {
                         "SELECT * FROM office WHERE id='$row->deployment_id'"
                       )
                     );
+                    $studentName = ucwords("$row->fname $row->mname $row->lname");
                   ?>
                     <tr>
-                      <td></td>
-                      <td><?= $row->id ?></td>
-                      <td><?= ucwords($row->fname) ?></td>
-                      <td><?= ucwords($row->mname) ?></td>
-                      <td><?= ucwords($row->lname) ?></td>
+                      <td class="tableTdAvatar">
+                        <img src="<?= "$SERVER_NAME/profile/" . ($row->avatar ? "$row->avatar" : "default.png") ?>" alt="Profile" class="rounded-circle">
+                      </td>
+                      <td class="tdName">
+                        <button type="button" class="btn btn-link" onclick="handleRedirectStudent('<?= $row->id ?>')">
+                          <?= $studentName ?>
+                        </button>
+                      </td>
                       <td><?= "4-" . strtoupper($row->section) ?></td>
                       <td><?= $course->short_name ?></td>
                       <td> <?= !$row->deployment_id ? "" : $office->name ?> </td>
@@ -183,37 +183,17 @@ if ($user->mname != null) {
     "info": true,
     "autoWidth": false,
     "responsive": true,
-    columnDefs: [{
-        orderable: false,
-        className: 'select-checkbox',
-        targets: 0,
-      },
-      {
-        targets: 1,
-        visible: false,
-        searchable: false,
-      },
-    ],
-    select: {
-      style: 'multi',
-    },
     "buttons": [{
-        text: 'Deselect all',
-        action: function() {
-          table.rows(['.selected']).deselect()
-        }
-      },
-      {
         extend: 'excel',
         exportOptions: {
-          columns: [2, 3, 4, 5, 6, 7, 8]
+          columns: [1, 2, 3, 4, 5]
         }
       },
       {
         extend: 'print',
         title: "",
         exportOptions: {
-          columns: [2, 3, 4, 5, 6, 7, 8]
+          columns: [1, 2, 3, 4, 5]
         }
       },
       "searchBuilder",
@@ -298,6 +278,10 @@ if ($user->mname != null) {
     } else {
       swalAlert('Error!', "No selected row on table", 'error');
     }
+  }
+
+  function handleRedirectStudent(studentId) {
+    return window.location.href = (`<?= $SERVER_NAME ?>/pages/admin/preview-student?id=${studentId}`)
   }
 </script>
 

@@ -94,11 +94,12 @@ $labels = getTotalAndRemainingTime($user->id);
                       <th>Name</th>
                       <th>Course and Section</th>
                     <?php endif; ?>
-                    <th>Time in</th>
-                    <th>Time out</th>
+                    <th>Date</th>
+                    <th>In</th>
+                    <th>Out</th>
                     <th>Image</th>
                     <th>Activity</th>
-                    <th>Time consume</th>
+                    <th>Time rendered</th>
                     <?php if ($isStudent) : ?>
                       <th>Action</th>
                     <?php endif; ?>
@@ -110,12 +111,12 @@ $labels = getTotalAndRemainingTime($user->id);
                   if ($isStudent && $isStudentDeployed) {
                     $query = mysqli_query(
                       $con,
-                      "SELECT * FROM users u INNER JOIN attendance a ON u.id = a.user_id WHERE a.time_in is NOT NULL and a.time_out is NOT NULL and u.role = 'student' and id='$user->id'"
+                      "SELECT * FROM users u RIGHT JOIN attendance a ON u.id = a.user_id WHERE u.role = 'student' and a.user_id='$user->id' ORDER BY a.attendance_id DESC"
                     );
                   } else {
                     $query = mysqli_query(
                       $con,
-                      "SELECT * FROM users u INNER JOIN attendance a ON u.id = a.user_id WHERE a.time_in is NOT NULL and a.time_out is NOT NULL and u.role = 'student'" . ($user->role == "admin" ? " and u.deployment_id='$user->office_account_id'" : "") . ""
+                      "SELECT * FROM users u RIGHT JOIN attendance a ON u.id = a.user_id WHERE u.role = 'student'" . ($user->role == "admin" ? " and u.deployment_id='$user->office_account_id'" : "") . " ORDER BY a.attendance_id DESC"
                     );
                   }
                   if (mysqli_num_rows($query) > 0) :
@@ -123,6 +124,8 @@ $labels = getTotalAndRemainingTime($user->id);
                     $mins = 0;
                     $secs = 0;
                     $totalTime = 0;
+                    $diff = null;
+
                     while ($row = mysqli_fetch_object($query)) :
                       $name = ucwords("$row->fname " . ($row->mname ? $row->mname[0] . "." : "") . " $row->lname");
                       $course = mysqli_fetch_object(
@@ -131,29 +134,40 @@ $labels = getTotalAndRemainingTime($user->id);
                           "SELECT * FROM course WHERE course_id='$row->course_id'"
                         )
                       );
-                      $diff = dateDiff("$row->date $row->time_in", "$row->date $row->time_out");
-                      $hoursInSecs = $diff['hours'] * 60 * 60;
-                      $minsInSecs = $diff['minutes'] * 60;
 
-                      $totalTime += $hoursInSecs + $minsInSecs + $diff['seconds'];
+                      if ($row->time_in && $row->time_out) {
+                        $diff = dateDiff("$row->date $row->time_in", "$row->date $row->time_out");
+                        $hoursInSecs = $diff['hours'] * 60 * 60;
+                        $minsInSecs = $diff['minutes'] * 60;
 
-                      $disabled = date("Y-m-d") != $row->date ? "disabled" : "";
+                        $totalTime += $hoursInSecs + $minsInSecs + $diff['seconds'];
+                      }
+
+                      $disabled = !$row->time_out || date("Y-m-d") != $row->date ? "disabled" : "";
+
                   ?>
                       <tr>
                         <?php if (!$isStudent) : ?>
                           <td><?= ucwords("$row->fname $row->mname $row->lname") ?></td>
                           <td><?= $course->short_name . " 4-" . strtoupper($row->section) ?></td>
                         <?php endif; ?>
-                        <td><?= "$row->date $row->time_in" ?></td>
-                        <td><?= "$row->date $row->time_out" ?></td>
+                        <td><?= $row->date ?></td>
+                        <td><?= $row->time_in ? "$row->time_in $row->log_type" : "-----" ?></td>
+                        <td><?= $row->time_out ? "$row->time_out $row->log_type" : "-----" ?></td>
                         <td style="width: 200px;">
                           <img src="<?= $SERVER_NAME . $row->image ?>" class="img-fluid">
                         </td>
                         <td>
-                          <?= nl2br($row->activity) ?>
+                          <?php if (!$row->time_out && date("Y-m-d") != $row->date) : ?>
+                            <span class="badge bg-danger rounded-pill px-4" style="font-size: 18px" onclick="handleEditTimeOut('<?= $row->attendance_id ?>')">
+                              <em><?= nl2br($row->activity) ?></em>
+                            </span>
+                          <?php else : ?>
+                            <?= nl2br($row->activity) ?>
+                          <?php endif; ?>
                         </td>
                         <td>
-                          <?= "$diff[hours] hrs $diff[minutes] mins $diff[seconds] secs" ?>
+                          <?= $row->time_in && $row->time_out ? "$diff[hours] hrs $diff[minutes] mins $diff[seconds] secs" : "-----" ?>
                         </td>
                         <?php if ($isStudent) : ?>
                           <td class="text-center">
@@ -206,7 +220,6 @@ $labels = getTotalAndRemainingTime($user->id);
       </div>
     </div>
   <?php endif; ?>
-
 
 </body>
 
@@ -286,6 +299,53 @@ $labels = getTotalAndRemainingTime($user->id);
     });
   })
 
+  function handleEditTimeOut(attendanceId) {
+    const input = `<input type="time" class="form-control" id="inputTimeOut">`
+    swal.fire({
+      title: "Set Time out",
+      html: input,
+      confirmButtonText: "Submit",
+      confirmButtonColor: "#198754",
+      showDenyButton: true,
+      denyButtonText: "Cancel",
+      preConfirm: () => {
+        const inputValue = $("#inputTimeOut").val();
+        if (!inputValue) {
+          Swal.showValidationMessage(`Please input time out time.`)
+          return false
+        }
+        return true;
+      }
+    }).then((res) => {
+      if (res.isConfirmed) {
+        $.post(
+          `../backend/nodes?action=editTimeOut`, {
+            attendance_id: attendanceId,
+            time_out: $("#inputTimeOut").val()
+          },
+          (data, status) => {
+            const resp = JSON.parse(data)
+            swalAlert(
+              resp.success ? 'Success!' : 'Error!',
+              resp.message ? resp.message : "",
+              resp.success ? 'success' : 'error',
+              () => {
+                if (resp.success) {
+                  window.location.reload()
+                }
+              }
+            );
+          }).fail(function(e) {
+          swalAlert(
+            'Error!',
+            e.statusText,
+            'error'
+          );
+        });
+      }
+    })
+  }
+
   function handleEditActivity(attendanceId, name) {
     $("input[name='attendanceId']").val(attendanceId)
     $(`#editActivityTitle`).html(`Edit <strong>${name}</strong> Activity`)
@@ -331,21 +391,21 @@ $labels = getTotalAndRemainingTime($user->id);
   var table = $("#studentTable").DataTable({
     "paging": true,
     "lengthChange": false,
-    "ordering": true,
+    "ordering": false,
     "info": true,
     "autoWidth": false,
     "responsive": true,
     "buttons": [{
         extend: 'excel',
         exportOptions: {
-          columns: <?= $isStudent ? json_encode([0, 1, 4]) : json_encode([0, 1, 2, 3, 6]) ?>
+          columns: <?= $isStudent ? json_encode([0, 1, 2, 4, 5]) : json_encode([0, 1, 2, 3, 6, 7]) ?>
         }
       },
       {
         extend: 'print',
         title: "",
         exportOptions: {
-          columns: <?= $isStudent ? json_encode([0, 1, 4]) : json_encode([0, 1, 2, 3, 6]) ?>
+          columns: <?= $isStudent ? json_encode([0, 1, 2, 4, 5]) : json_encode([0, 1, 2, 3, 6, 7]) ?>
         }
       },
       "searchBuilder",

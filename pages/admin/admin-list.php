@@ -69,9 +69,8 @@ if ($user->mname != null) {
               <table id="adminTable" class=" table table-bordered table-hover table-striped">
                 <thead>
                   <tr class="bg-dark text-white">
-                    <th>First name</th>
-                    <th>Middle name</th>
-                    <th>Last name</th>
+                    <th>Avatar</th>
+                    <th>Full name</th>
                     <th>Office</th>
                     <th>Email</th>
                     <th>Action</th>
@@ -90,11 +89,15 @@ if ($user->mname != null) {
                         "SELECT * FROM office WHERE id ='$row->office_account_id'"
                       )
                     );
+                    $adminFullName = ucwords("$row->fname $row->mname $row->lname");
                   ?>
                     <tr>
-                      <td><?= ucwords($row->fname) ?></td>
-                      <td><?= ucwords($row->mname) ?></td>
-                      <td><?= ucwords($row->lname) ?></td>
+                      <td class="tableTdAvatar">
+                        <img src="<?= "$SERVER_NAME/profile/" . ($row->avatar ? "$row->avatar" : "default.png") ?>" alt="Profile" class="rounded-circle">
+                      </td>
+                      <td class="tdName">
+                        <?= $adminFullName ?>
+                      </td>
                       <td><?= ucwords($officeData->name) ?></td>
                       <td><?= $row->email ?></td>
                       <td class="text-center">
@@ -308,30 +311,42 @@ if ($user->mname != null) {
   })
 
   function handleDelete(userId) {
-    showLoading();
-    $.post(
-      `../../backend/nodes?action=delete`, {
-        userId: userId,
-      },
-      (data, status) => {
-        const resp = JSON.parse(data)
-        swalAlert(
-          resp.success ? 'Success!' : 'Error!',
-          resp.message ? resp.message : "",
-          resp.success ? 'success' : 'error',
-          () => {
-            if (resp.success) {
-              return window.location.reload()
-            }
-          }
-        );
-      }).fail(function(e) {
-      swalAlert(
-        'Error!',
-        e.statusText,
-        'error'
-      );
-    });
+    swal.fire({
+      title: 'Are you sure',
+      icon: 'question',
+      html: `you want to delete this admin?`,
+      showDenyButton: true,
+      confirmButtonText: 'Yes',
+      denyButtonText: 'No',
+    }).then((res) => {
+      if (res.isConfirmed) {
+        showLoading();
+        $.post(
+          `../../backend/nodes?action=delete`, {
+            userId: userId,
+          },
+          (data, status) => {
+            const resp = JSON.parse(data)
+            swalAlert(
+              resp.success ? 'Success!' : 'Error!',
+              resp.message ? resp.message : "",
+              resp.success ? 'success' : 'error',
+              () => {
+                if (resp.success) {
+                  return window.location.reload()
+                }
+              }
+            );
+          }).fail(function(e) {
+          swalAlert(
+            'Error!',
+            e.statusText,
+            'error'
+          );
+        });
+      }
+    })
+
   }
 
   function handleOpenModal(modalId = null) {
@@ -367,14 +382,14 @@ if ($user->mname != null) {
     "buttons": [{
         extend: 'excel',
         exportOptions: {
-          columns: [0, 1, 2, 3, 4]
+          columns: [1, 2, 3]
         }
       },
       {
         extend: 'print',
         title: "",
         exportOptions: {
-          columns: [0, 1, 2, 3, 4]
+          columns: [1, 2, 3]
         }
       },
       "searchBuilder"

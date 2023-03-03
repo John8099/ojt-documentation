@@ -81,10 +81,18 @@ if ($user->mname != null) {
                 </thead>
                 <tbody>
                   <?php
-                  $query = mysqli_query(
-                    $con,
-                    "SELECT * FROM users WHERE `role` = 'student' and deployment_id='$user->office_account_id'"
-                  );
+                  if ($user->role == "admin") {
+                    $query = mysqli_query(
+                      $con,
+                      "SELECT * FROM users WHERE `role` = 'student' and deployment_id='$user->office_account_id'"
+                    );
+                  } else {
+                    $query = mysqli_query(
+                      $con,
+                      "SELECT * FROM users WHERE `role` = 'student'"
+                    );
+                  }
+
                   while ($row = mysqli_fetch_object($query)) :
                     $course = mysqli_fetch_object(
                       mysqli_query(
@@ -92,48 +100,43 @@ if ($user->mname != null) {
                         "SELECT * FROM course WHERE course_id='$row->course_id'"
                       )
                     );
-                    $studentName = ucwords("$row->fname $row->mname $row->lname");
+                    $evaluateQ = mysqli_query(
+                      $con,
+                      "SELECT * FROM evaluation WHERE user_id='$row->id'"
+                    );
+                    if (mysqli_num_rows($evaluateQ) > 0) :
+                      $evaluation = mysqli_fetch_object($evaluateQ);
+                      $studentName = ucwords("$row->fname $row->mname $row->lname");
                   ?>
-                    <tr>
-                      <td class="tableTdAvatar">
-                        <img src="<?= "$SERVER_NAME/profile/" . ($row->avatar ? "$row->avatar" : "default.png") ?>" alt="Profile" class="rounded-circle">
-                      </td>
-                      <td class="tdName">
-                        <button type="button" class="btn btn-link" onclick="handleRedirectStudent('<?= $row->id ?>')">
-                          <?= $studentName ?>
-                        </button>
-                      </td>
-                      <td><?= $course->short_name . " 4-" . strtoupper($row->section) ?></td>
-                      <td style="text-transform: capitalize;">
-                        <?php
-                        $labels = getTotalAndRemainingTime($row->id);
-                        ?>
-                        Total:
-                        <label style="color:<?= $labels["rendered"] != "" ? "darkgreen" : "darkred" ?>">
-                          <?= $labels["rendered"] != "" ? $labels["rendered"] : "-------------" ?>
-                        </label>
-                        <br>
-                        Remaining:
-                        <label style="color:<?= $labels["remaining"] != "" ? "darkred" : "darkgreen" ?>">
-                          <?= $labels["remaining"] != "" ? $labels["remaining"] : "Done" ?>
-                        </label>
-                      </td>
-                      <td>
-                        <?php
-                        $evaluateQ = mysqli_query(
-                          $con,
-                          "SELECT * FROM evaluation WHERE user_id='$row->id'"
-                        );
-                        if (mysqli_num_rows($evaluateQ) == 0) {
-                        ?>
-                          <button class="btn btn-primary" type="button" onclick="return window.location.href='evaluate?id=<?= $row->id ?>'">Evaluate</button>
-                        <?php
-                        }
-                        ?>
-                      </td>
-                    </tr>
-
-
+                      <tr>
+                        <td class="tableTdAvatar">
+                          <img src="<?= "$SERVER_NAME/profile/" . ($row->avatar ? "$row->avatar" : "default.png") ?>" alt="Profile" class="rounded-circle">
+                        </td>
+                        <td class="tdName">
+                          <button type="button" class="btn btn-link" onclick="handleRedirectStudent('<?= $row->id ?>')">
+                            <?= $studentName ?>
+                          </button>
+                        </td>
+                        <td><?= $course->short_name . " 4-" . strtoupper($row->section) ?></td>
+                        <td style="text-transform: capitalize;">
+                          <?php
+                          $labels = getTotalAndRemainingTime($row->id);
+                          ?>
+                          Total:
+                          <label style="color:<?= $labels["rendered"] != "" ? "darkgreen" : "darkred" ?>">
+                            <?= $labels["rendered"] != "" ? $labels["rendered"] : "-------------" ?>
+                          </label>
+                          <br>
+                          Remaining:
+                          <label style="color:<?= $labels["remaining"] != "" ? "darkred" : "darkgreen" ?>">
+                            <?= $labels["remaining"] != "" ? $labels["remaining"] : "Done" ?>
+                          </label>
+                        </td>
+                        <td>
+                          <button class="btn btn-primary" type="button" onclick="return window.location.href='preview-evaluation?id=<?= $evaluation->evaluation_id ?>'">Preview</button>
+                        </td>
+                      </tr>
+                    <?php endif; ?>
                   <?php endwhile; ?>
                 </tbody>
               </table>

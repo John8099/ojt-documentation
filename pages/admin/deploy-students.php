@@ -66,24 +66,26 @@ if ($user->mname != null) {
         <div class="col-lg-12">
           <div class="card">
             <div class="card-header d-flex justify-content-between">
-              <h4 class="card-title">Students</h4>
+              <h4 class="card-title">Deploy Students</h4>
+              <button class="btn btn-primary" style="height: 40px;" onclick="updateDeployment()">Update deployment</button>
             </div>
             <div class="card-body">
               <table id="studentTable" class=" table table-bordered table-hover table-striped">
                 <thead>
                   <tr class="bg-dark text-white">
+                    <th style="width: 30px;"></th>
+                    <th>Id</th>
                     <th>Avatar</th>
-                    <th>Name</th>
-                    <th>Course & Section</th>
-                    <th>Rendered</th>
-                    <th>Action</th>
+                    <th>Full name</th>
+                    <th>Section</th>
+                    <th>Course</th>
                   </tr>
                 </thead>
                 <tbody>
                   <?php
                   $query = mysqli_query(
                     $con,
-                    "SELECT * FROM users WHERE `role` = 'student' and deployment_id='$user->office_account_id'"
+                    "SELECT * FROM users WHERE `role` = 'student' and deployment_id is NULL"
                   );
                   while ($row = mysqli_fetch_object($query)) :
                     $course = mysqli_fetch_object(
@@ -92,48 +94,26 @@ if ($user->mname != null) {
                         "SELECT * FROM course WHERE course_id='$row->course_id'"
                       )
                     );
+                    $office = mysqli_fetch_object(
+                      mysqli_query(
+                        $con,
+                        "SELECT * FROM office WHERE id='$row->deployment_id'"
+                      )
+                    );
                     $studentName = ucwords("$row->fname $row->mname $row->lname");
                   ?>
                     <tr>
+                      <td></td>
+                      <td><?= $row->id ?></td>
                       <td class="tableTdAvatar">
                         <img src="<?= "$SERVER_NAME/profile/" . ($row->avatar ? "$row->avatar" : "default.png") ?>" alt="Profile" class="rounded-circle">
                       </td>
                       <td class="tdName">
-                        <button type="button" class="btn btn-link" onclick="handleRedirectStudent('<?= $row->id ?>')">
-                          <?= $studentName ?>
-                        </button>
+                        <?= $studentName ?>
                       </td>
-                      <td><?= $course->short_name . " 4-" . strtoupper($row->section) ?></td>
-                      <td style="text-transform: capitalize;">
-                        <?php
-                        $labels = getTotalAndRemainingTime($row->id);
-                        ?>
-                        Total:
-                        <label style="color:<?= $labels["rendered"] != "" ? "darkgreen" : "darkred" ?>">
-                          <?= $labels["rendered"] != "" ? $labels["rendered"] : "-------------" ?>
-                        </label>
-                        <br>
-                        Remaining:
-                        <label style="color:<?= $labels["remaining"] != "" ? "darkred" : "darkgreen" ?>">
-                          <?= $labels["remaining"] != "" ? $labels["remaining"] : "Done" ?>
-                        </label>
-                      </td>
-                      <td>
-                        <?php
-                        $evaluateQ = mysqli_query(
-                          $con,
-                          "SELECT * FROM evaluation WHERE user_id='$row->id'"
-                        );
-                        if (mysqli_num_rows($evaluateQ) == 0) {
-                        ?>
-                          <button class="btn btn-primary" type="button" onclick="return window.location.href='evaluate?id=<?= $row->id ?>'">Evaluate</button>
-                        <?php
-                        }
-                        ?>
-                      </td>
+                      <td><?= "4-" . strtoupper($row->section) ?></td>
+                      <td><?= $course->short_name ?></td>
                     </tr>
-
-
                   <?php endwhile; ?>
                 </tbody>
               </table>
@@ -143,6 +123,9 @@ if ($user->mname != null) {
       </div>
     </section>
   </main><!-- End #main -->
+
+
+
 </body>
 
 <!-- Vendor JS Files -->
@@ -184,18 +167,37 @@ if ($user->mname != null) {
     "info": true,
     "autoWidth": false,
     "responsive": true,
-
+    columnDefs: [{
+        orderable: false,
+        className: 'select-checkbox',
+        targets: 0,
+      },
+      {
+        targets: 1,
+        visible: false,
+        searchable: false,
+      },
+    ],
+    select: {
+      style: 'multi',
+    },
     "buttons": [{
+        text: 'Deselect all',
+        action: function() {
+          table.rows(['.selected']).deselect()
+        }
+      },
+      {
         extend: 'excel',
         exportOptions: {
-          columns: [1, 2, 3]
+          columns: [2, 3, 4]
         }
       },
       {
         extend: 'print',
         title: "",
         exportOptions: {
-          columns: [1, 2, 3]
+          columns: [2, 3, 4]
         }
       },
       "searchBuilder",
@@ -209,8 +211,77 @@ if ($user->mname != null) {
 
   table.buttons().container().appendTo('#studentTable_wrapper .col-md-6:eq(0)');
 
-  function handleRedirectStudent(studentId) {
-    return window.location.href = (`<?= $SERVER_NAME ?>/pages/admin/preview-student?id=${studentId}`)
+  function updateDeployment() {
+    if (table.rows(['.selected']).data().count() > 0) {
+
+      const jsonOffice = $.parseJSON('<?= getAllOffice() ? json_encode(getAllOffice()) : '[]' ?>')
+      let options = "<option value='' disabled selected>-----</option>"
+      options += jsonOffice.map((data) => {
+        return `<option value="${data.id}">
+                    ${data.name}
+                  </option>`
+      });
+      const html = `
+            <select id="inputOffice" class="form-select" style="text-transform: capitalize">
+              ${jsonOffice.length == 0  ? "<option value='' disabled selected> No available office </option>" : options}
+            </select>
+        `;
+      swal.fire({
+        icon: 'question',
+        title: "Select office",
+        html: html,
+        showDenyButton: true,
+        confirmButtonText: 'Submit',
+        denyButtonText: 'Cancel',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        preConfirm: () => {
+          if (!$("#inputOffice").val()) {
+            $("#inputOffice").addClass("is-invalid");
+            swal.showValidationMessage("please select office to deploy")
+            return false;
+          }
+          return $("#inputOffice").val()
+        },
+      }).then((res) => {
+        if (res.isConfirmed) {
+          showLoading();
+          const officeId = res.value;
+          const userIds = $.map(table.rows(['.selected']).data(), (data) => data[1])
+
+          $.post(
+            `../../backend/nodes?action=updateDeployment`, {
+              officeId: officeId,
+              userIds: userIds
+            },
+            (data, status) => {
+              const resp = JSON.parse(data)
+              swalAlert(
+                resp.success ? 'Success!' : 'Error!',
+                resp.message ? resp.message : "",
+                resp.success ? 'success' : 'error',
+                () => {
+                  if (resp.success) {
+                    return window.location.reload()
+                  }
+                }
+              );
+            }).fail(function(e) {
+            swalAlert(
+              'Error!',
+              e.statusText,
+              'error'
+            );
+          });
+
+        }
+      })
+      if (jsonOffice.length == 0) {
+        swal.getConfirmButton().disabled = true
+      }
+    } else {
+      swalAlert('Error!', "No selected row on table", 'error');
+    }
   }
 </script>
 

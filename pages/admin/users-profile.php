@@ -1,7 +1,7 @@
 <?php
-include_once("../backend/nodes.php");
+include_once("../../backend/nodes.php");
 if (!isset($_SESSION["id"])) {
-  header("location: ../");
+  header("location: ../../");
 }
 $user = getUserById($_SESSION['id']);
 $fullName = "";
@@ -22,8 +22,8 @@ if ($user->mname != null) {
   <title>OJT Documentation</title>
 
   <!-- Favicons -->
-  <link href="../assets/img/ojt.png" rel="icon">
-  <link href="../assets/img/ojt.png" rel="apple-touch-icon">
+  <link href="../../assets/img/ojt.png" rel="icon">
+  <link href="../../assets/img/ojt.png" rel="apple-touch-icon">
 
 
   <!-- Google Fonts -->
@@ -31,26 +31,26 @@ if ($user->mname != null) {
   <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,300i,400,400i,600,600i,700,700i|Nunito:300,300i,400,400i,600,600i,700,700i|Poppins:300,300i,400,400i,500,500i,600,600i,700,700i" rel="stylesheet">
 
   <!-- Vendor CSS Files -->
-  <link href="../assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
-  <link href="../assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+  <link href="../../assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link href="../../assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
 
   <!-- Template Main CSS File -->
-  <link href="../assets/css/style.css" rel="stylesheet">
+  <link href="../../assets/css/style.css" rel="stylesheet">
 </head>
 
 <body>
 
   <!-- ======= Header ======= -->
-  <?php include_once("../components/header.php"); ?>
+  <?php include_once("../../components/header.php"); ?>
   <!-- End Header -->
 
   <!-- ======= Sidebar ======= -->
-  <?php include_once("../components/sidebar.php") ?>
+  <?php include_once("../../components/sidebar.php") ?>
   <!-- End Sidebar-->
 
   <main id="main" class="main">
 
-    <section class="section dashboard">
+    <section class="section profile">
       <div class="row">
         <div class="col-lg-12">
           <div class="card">
@@ -59,7 +59,7 @@ if ($user->mname != null) {
               <ul class="nav nav-tabs nav-tabs-bordered">
 
                 <li class="nav-item">
-                  <button class="nav-link active" data-toggle="tab" data-target="#profile-edit">Edit Profile</button>
+                  <button class="nav-link active" data-toggle="tab" data-target="#profile-edit">Profile</button>
                 </li>
 
                 <li class="nav-item">
@@ -74,6 +74,26 @@ if ($user->mname != null) {
                   <!-- Profile Edit Form -->
                   <form method="POST" id="formUserData">
                     <input type="text" name="id" value="<?= $user->id ?>" hidden readonly>
+
+                    <div class="row mb-3">
+                      <label for="profileImage" class="col-md-4 col-lg-3 col-form-label">Profile Image</label>
+                      <div class="col-md-8 col-lg-9">
+                        <img src="<?= "$SERVER_NAME/profile/" . ($user->avatar ? "$user->avatar" : "default.png") ?>" alt="Profile" style="object-fit: cover;" id="imgProfile">
+
+                        <input type="file" id="profile" name="inputProfile" class="d-none" accept="image/png,image/jpeg" onchange="uploadImg(this,$(this))">
+
+                        <div class="pt-2">
+                          <button type="button" class="btn btn-primary btn-sm" id="buttonUpload" title="Upload new profile image">
+                            <i class="bi bi-upload"></i>
+                          </button>
+
+                          <button type="button" id="buttonRemove" class="btn btn-danger btn-sm" title="Remove my profile image" style="<?= $user->avatar ? "" : "display: none" ?>">
+                            <i class="bi bi-trash"></i>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
                     <div class="row mb-3">
                       <label class="col-md-4 col-lg-3 col-form-label">First name</label>
                       <div class="col-md-8 col-lg-9">
@@ -181,23 +201,81 @@ if ($user->mname != null) {
 </body>
 
 <!-- Vendor JS Files -->
-<script src="../assets/vendor/jquery/jquery.min.js"></script>
-<script src="../assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-<script src="../assets/vendor/tinymce/tinymce.min.js"></script>
+<script src="../../assets/vendor/jquery/jquery.min.js"></script>
+<script src="../../assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="../../assets/vendor/tinymce/tinymce.min.js"></script>
 
-<script src="../assets/vendor/sweetalert2/sweetalert2.all.min.js"></script>
+<script src="../../assets/vendor/sweetalert2/sweetalert2.all.min.js"></script>
 
 
 <!-- Template Main JS File -->
-<script src="../assets/js/main.js"></script>
-<script src="../assets/js/swalGlobal.js"></script>
+<script src="../../assets/js/main.js"></script>
+<script src="../../assets/js/swalGlobal.js"></script>
 
 <script>
+  $("#buttonUpload").on("click", function() {
+    $("#profile").trigger("click")
+  })
+
+  $("#buttonRemove").on("click", function() {
+    showLoading();
+    $.get(
+      `../../backend/nodes?action=removeProfile`,
+      (data, status) => {
+        const resp = $.parseJSON(data)
+        swal.close();
+
+        if (resp.success) {
+          $('#imgProfile').attr('src', resp.img_url);
+          $('#headerProfile').attr('src', resp.img_url);
+          $(this).hide();
+        }
+        $("#profile").val("")
+      }).fail(function(e) {
+      swalAlert(
+        'Error!',
+        e.statusText,
+        'error'
+      );
+    });
+  })
+
+  function uploadImg(input, _this) {
+    var formData = new FormData();
+    if (input.files && input.files[0]) {
+      formData.append("inputProfile", input.files[0]);
+      $.ajax({
+        url: "../../backend/nodes?action=uploadProfile",
+        method: "POST",
+        data: formData,
+        contentType: false,
+        cache: false,
+        processData: false,
+        beforeSend: function() {
+          showLoading();
+        },
+        success: function(data) {
+          const resp = $.parseJSON(data)
+          swal.close();
+
+          if (resp.success) {
+            $('#imgProfile').attr('src', resp.img_url);
+            $('#headerProfile').attr('src', resp.img_url);
+            $("#buttonRemove").show();
+          }
+          $("#profile").val("")
+        }
+      });
+    } else {
+      $('#imgProfile').attr('src', "../../profile/default.png");
+    }
+  }
+
   $("#changePassword").on("submit", function(e) {
     e.preventDefault();
     showLoading();
     $.post(
-      `../backend/nodes?action=changePassword`,
+      `../../backend/nodes?action=changePassword`,
       $(this).serialize(),
       (data, status) => {
         const resp = JSON.parse(data)
@@ -225,7 +303,7 @@ if ($user->mname != null) {
     showLoading();
 
     $.post(
-      `../backend/nodes?action=updateUserData`,
+      `../../backend/nodes?action=updateUserData`,
       $(this).serialize(),
       (data, status) => {
         const resp = JSON.parse(data)
