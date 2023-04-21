@@ -213,72 +213,85 @@ if ($user->mname != null) {
 
   function updateDeployment() {
     if (table.rows(['.selected']).data().count() > 0) {
-
-      const jsonOffice = $.parseJSON('<?= getAllOffice() ? json_encode(getAllOffice()) : '[]' ?>')
-      let options = "<option value='' disabled selected>-----</option>"
-      options += jsonOffice.map((data) => {
-        return `<option value="${data.id}">
+      swal.showLoading()
+      $.get(
+        `../../backend/nodes?action=getAllOffice`,
+        (getData, getStat) => {
+          const jsonOffice = $.parseJSON(getData)
+          let options = "<option value='' disabled selected>-----</option>"
+          options += jsonOffice.map((data) => {
+            return `<option value="${data.id}">
                     ${data.name}
                   </option>`
-      });
-      const html = `
+          });
+          const html = `
             <select id="inputOffice" class="form-select" style="text-transform: capitalize">
               ${jsonOffice.length == 0  ? "<option value='' disabled selected> No available office </option>" : options}
             </select>
         `;
-      swal.fire({
-        icon: 'question',
-        title: "Select office",
-        html: html,
-        showDenyButton: true,
-        confirmButtonText: 'Submit',
-        denyButtonText: 'Cancel',
-        allowOutsideClick: false,
-        allowEscapeKey: false,
-        preConfirm: () => {
-          if (!$("#inputOffice").val()) {
-            $("#inputOffice").addClass("is-invalid");
-            swal.showValidationMessage("please select office to deploy")
-            return false;
-          }
-          return $("#inputOffice").val()
-        },
-      }).then((res) => {
-        if (res.isConfirmed) {
-          showLoading();
-          const officeId = res.value;
-          const userIds = $.map(table.rows(['.selected']).data(), (data) => data[1])
-
-          $.post(
-            `../../backend/nodes?action=updateDeployment`, {
-              officeId: officeId,
-              userIds: userIds
+          swal.fire({
+            icon: 'question',
+            title: "Select office",
+            html: html,
+            showDenyButton: true,
+            confirmButtonText: 'Submit',
+            denyButtonText: 'Cancel',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            preConfirm: () => {
+              if (!$("#inputOffice").val()) {
+                $("#inputOffice").addClass("is-invalid");
+                swal.showValidationMessage("please select office to deploy")
+                return false;
+              }
+              return $("#inputOffice").val()
             },
-            (data, status) => {
-              const resp = JSON.parse(data)
-              swalAlert(
-                resp.success ? 'Success!' : 'Error!',
-                resp.message ? resp.message : "",
-                resp.success ? 'success' : 'error',
-                () => {
-                  if (resp.success) {
-                    return window.location.reload()
-                  }
-                }
-              );
-            }).fail(function(e) {
-            swalAlert(
-              'Error!',
-              e.statusText,
-              'error'
-            );
-          });
+          }).then((res) => {
+            if (res.isConfirmed) {
+              showLoading();
+              const officeId = res.value;
+              const userIds = $.map(table.rows(['.selected']).data(), (data) => data[1])
 
-        }
-      })
-      if (jsonOffice.length == 0) {
-        swal.getConfirmButton().disabled = true
-      }
+              $.post(
+                `../../backend/nodes?action=updateDeployment`, {
+                  officeId: officeId,
+                  userIds: userIds
+                },
+                (data, status) => {
+                  const resp = JSON.parse(data)
+                  swalAlert(
+                    resp.success ? 'Success!' : 'Error!',
+                    resp.message ? resp.message : "",
+                    resp.success ? 'success' : 'error',
+                    () => {
+                      if (resp.success) {
+                        return window.location.reload()
+                      }
+                    }
+                  );
+                }).fail(function(e) {
+                swalAlert(
+                  'Error!',
+                  e.statusText,
+                  'error'
+                );
+              });
+
+            }
+          })
+          if (jsonOffice.length == 0) {
+            swal.getConfirmButton().disabled = true
+          }
+        }).fail(function(e) {
+        swalAlert(
+          'Error!',
+          e.statusText,
+          'error'
+        );
+      });
+
+
+
     } else {
       swalAlert('Error!', "No selected row on table", 'error');
     }

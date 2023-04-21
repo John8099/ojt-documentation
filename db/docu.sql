@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Mar 03, 2023 at 11:50 AM
+-- Generation Time: Apr 21, 2023 at 07:29 AM
 -- Server version: 10.4.27-MariaDB
 -- PHP Version: 8.0.25
 
@@ -37,6 +37,13 @@ CREATE TABLE `attendance` (
   `image` varchar(250) NOT NULL,
   `log_type` varchar(2) NOT NULL COMMENT 'AM, PM'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `attendance`
+--
+
+INSERT INTO `attendance` (`attendance_id`, `user_id`, `date`, `time_in`, `time_out`, `activity`, `image`, `log_type`) VALUES
+(1, 5, '2023-03-06', '11:41:10', '11:41:17', '<p>awdawdawd</p>', '/media/03062023-114110_webcam.jpg', 'AM');
 
 -- --------------------------------------------------------
 
@@ -126,7 +133,7 @@ CREATE TABLE `evaluation` (
 --
 
 INSERT INTO `evaluation` (`evaluation_id`, `admin_id`, `user_id`, `evaluation`, `created_at`) VALUES
-(10, 22, 5, '[{\"title\":\"Attends regularly\",\"name\":\"behavior_a\",\"value\":\"1\"},{\"title\":\"Starts the work promptly\",\"name\":\"behavior_b\",\"value\":\"2\"},{\"title\":\"Courteous and Considerate\",\"name\":\"behavior_c\",\"value\":\"3\"},{\"title\":\"Express his/her ideas well\",\"name\":\"behavior_d\",\"value\":\"2\"},{\"title\":\"Listen attentively to trainer\",\"name\":\"behavior_e\",\"value\":\"2\"},{\"title\":\"Display interest in his/her work\",\"name\":\"behavior_f\",\"value\":\"3\"},{\"title\":\"Careful in handling office facilities and equipment\",\"name\":\"behavior_g\",\"value\":\"1\"},{\"title\":\"Works to the best of his/her ability.\",\"name\":\"behavior_h\",\"value\":\"4\"},{\"title\":\"Works to develop a variety of skills.\",\"name\":\"behavior_i\",\"value\":\"5\"},{\"title\":\"Cooperates well with others.\",\"name\":\"behavior_j\",\"value\":\"4\"},{\"title\":\"Is generally  a good follower\",\"name\":\"behavior_k\",\"value\":\"4\"},{\"title\":\"Accepts responsibility\",\"name\":\"behavior_l\",\"value\":\"3\"},{\"title\":\"Volunteers for an assignment\",\"name\":\"behavior_m\",\"value\":\"4\"},{\"title\":\"Makes worth with suggestion\",\"name\":\"behavior_n\",\"value\":\"4\"},{\"title\":\"Exhibits orderly/ safe working habits\",\"name\":\"behavior_o\",\"value\":\"4\"},{\"title\":\"Applies principles to actual work station\",\"name\":\"behavior_p\",\"value\":\"4\"},{\"title\":\"Knowledge in assigned job proceedings\",\"name\":\"behavior_q\",\"value\":\"4\"},{\"title\":\"Ability to plan activities\",\"name\":\"behavior_r\",\"value\":\"5\"},{\"title\":\"Initiative/ resourcefulness\",\"name\":\"behavior_s\",\"value\":\"4\"},{\"title\":\"Judgment and common sense\",\"name\":\"behavior_t\",\"value\":\"4\"},{\"title\":\"Interest and good attitude towards work\",\"name\":\"behavior_u\",\"value\":\"4\"},{\"title\":\"Prepare report accurately\",\"name\":\"behavior_v\",\"value\":\"5\"},{\"title\":\"Submits reports on time\",\"name\":\"behavior_w\",\"value\":\"4\"}]', '2023-02-28 14:22:28');
+(11, 22, 5, '[{\"title\":\"Attends regularly\",\"name\":\"behavior_a\",\"value\":\"1\"},{\"title\":\"Starts the work promptly\",\"name\":\"behavior_b\",\"value\":\"2\"},{\"title\":\"Courteous and Considerate\",\"name\":\"behavior_c\",\"value\":\"3\"},{\"title\":\"Express his/her ideas well\",\"name\":\"behavior_d\",\"value\":\"3\"},{\"title\":\"Listen attentively to trainer\",\"name\":\"behavior_e\",\"value\":\"4\"},{\"title\":\"Display interest in his/her work\",\"name\":\"behavior_f\",\"value\":\"3\"},{\"title\":\"Careful in handling office facilities and equipment\",\"name\":\"behavior_g\",\"value\":\"4\"},{\"title\":\"Works to the best of his/her ability.\",\"name\":\"behavior_h\",\"value\":\"4\"},{\"title\":\"Works to develop a variety of skills.\",\"name\":\"behavior_i\",\"value\":\"4\"},{\"title\":\"Cooperates well with others.\",\"name\":\"behavior_j\",\"value\":\"4\"},{\"title\":\"Is generally  a good follower\",\"name\":\"behavior_k\",\"value\":\"3\"},{\"title\":\"Accepts responsibility\",\"name\":\"behavior_l\",\"value\":\"4\"},{\"title\":\"Volunteers for an assignment\",\"name\":\"behavior_m\",\"value\":\"3\"},{\"title\":\"Makes worth with suggestion\",\"name\":\"behavior_n\",\"value\":\"4\"},{\"title\":\"Exhibits orderly/ safe working habits\",\"name\":\"behavior_o\",\"value\":\"4\"},{\"title\":\"Applies principles to actual work station\",\"name\":\"behavior_p\",\"value\":\"3\"},{\"title\":\"Knowledge in assigned job proceedings\",\"name\":\"behavior_q\",\"value\":\"4\"},{\"title\":\"Ability to plan activities\",\"name\":\"behavior_r\",\"value\":\"5\"},{\"title\":\"Initiative/ resourcefulness\",\"name\":\"behavior_s\",\"value\":\"4\"},{\"title\":\"Judgment and common sense\",\"name\":\"behavior_t\",\"value\":\"5\"},{\"title\":\"Interest and good attitude towards work\",\"name\":\"behavior_u\",\"value\":\"4\"},{\"title\":\"Prepare report accurately\",\"name\":\"behavior_v\",\"value\":\"3\"},{\"title\":\"Submits reports on time\",\"name\":\"behavior_w\",\"value\":\"4\"}]', '2023-03-06 03:35:36');
 
 -- --------------------------------------------------------
 
@@ -172,8 +179,9 @@ INSERT INTO `forms` (`form_id`, `user_id`, `file_name`, `form_type`, `createdAt`
 (1, 5, '03032023-012105_2_BSIS3B_GRP4_ThesisAdviserInvitation_ACCEPT.pdf', 'applicationLetter', '2023-03-03 05:20:29'),
 (2, 5, '03032023-012500_pdfjs-express-demo.pdf', 'journal', '2023-03-03 05:25:05'),
 (3, 5, '03032023-013315_pdfjs-express-demo.pdf', 'journal', '2023-03-03 05:33:17'),
-(4, 5, '03032023-060044_pdfjs-express-demo.pdf', 'waiver', '2023-03-03 06:41:50'),
-(5, 5, '03032023-024225_pdfjs-express-demo.pdf', 'journal', '2023-03-03 06:42:27');
+(4, 5, '03062023-115503_pdfjs-express-demo.pdf', 'waiver', '2023-03-03 06:41:50'),
+(5, 5, '03032023-024225_pdfjs-express-demo.pdf', 'journal', '2023-03-03 06:42:27'),
+(7, 5, '03062023-113724_pdfjs-express-demo.pdf', 'endorsement', '2023-03-06 03:37:24');
 
 -- --------------------------------------------------------
 
@@ -210,7 +218,12 @@ INSERT INTO `notification` (`notification_id`, `user_id`, `admin_id`, `notificat
 (13, 5, 1, 'updated Waiver', 1, '2023-03-03 01:41:09'),
 (14, 5, 22, 'updated Waiver', 1, '2023-03-03 09:16:31'),
 (16, 5, 1, 'updated Waiver', 1, '2023-03-03 10:01:45'),
-(17, 5, 22, 'updated Waiver', 0, '2023-03-03 10:00:44');
+(17, 5, 22, 'updated Waiver', 1, '2023-03-06 03:36:25'),
+(18, 5, 1, 'submitted Endorsement Letter', 1, '2023-03-06 03:49:54'),
+(19, 5, 22, 'submitted Endorsement Letter', 1, '2023-03-06 03:38:36'),
+(20, 5, 1, 'updated Waiver', 1, '2023-03-06 03:49:54'),
+(21, 5, 22, 'updated Waiver', 1, '2023-03-06 03:39:36'),
+(22, 5, 1, 'updated Waiver', 1, '2023-03-06 03:55:47');
 
 -- --------------------------------------------------------
 
@@ -230,7 +243,10 @@ CREATE TABLE `office` (
 INSERT INTO `office` (`id`, `name`) VALUES
 (1, 'Buenavista Town Hall'),
 (2, 'Guimaras State Collage ICT OFFICE (Salvador Campus)'),
-(3, 'Department of Agriculture Office');
+(3, 'Department of Agriculture Office'),
+(5, 'Guimaras State College ICT OFFICE (Salvador Campus)'),
+(6, 'Guimaras State College ICT OFFICE (Mosqueda Campus)'),
+(7, 'Guimaras State College ICT OFFICE (Baterna Campus)');
 
 -- --------------------------------------------------------
 
@@ -290,8 +306,8 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `avatar`, `fname`, `lname`, `mname`, `contact`, `city_address`, `provincial_address`, `date_of_birth`, `place_of_birth`, `civil_status`, `gender`, `height`, `weight`, `special_skills`, `physical_disability`, `mental_disability`, `criminal_liability`, `email`, `password`, `course_id`, `section`, `deployment_id`, `role`, `isNew`, `office_account_id`) VALUES
-(1, '03032023-051927_messages-3.jpg', 'super1', 'admin', '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'admin@email.com', '$argon2i$v=19$m=65536,t=4,p=1$eUwwdk5LYUxTcGgyMzE1eA$acMNjJdFkn5MOuqQrmAAC/Y3z0DIzwNFXbAe1t/Nhqs', NULL, NULL, NULL, 'super-admin', 0, NULL),
-(5, NULL, 'Test', 'Test', 'Test', '098765432', NULL, 'Address', '1997-05-03', 'Boac', 'Single', 'Male', '125', '72', 'Test, Test', 'Test', 'Test', NULL, 'test_student@gmail.com', '$argon2i$v=19$m=65536,t=4,p=1$MWlKTEw1b3Bnbld5YTFFTg$5v0lcXhwCrdncrAIYk7wKhCtnMYtv31AQOHZ3vNUHbQ', 1, 'A', 2, 'student', NULL, NULL),
+(1, '03062023-115722_messages-2.jpg', 'super1', 'admin', '', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'admin@email.com', '$argon2i$v=19$m=65536,t=4,p=1$eUwwdk5LYUxTcGgyMzE1eA$acMNjJdFkn5MOuqQrmAAC/Y3z0DIzwNFXbAe1t/Nhqs', NULL, NULL, NULL, 'super-admin', 0, NULL),
+(5, '03062023-114545_messages-3.jpg', 'Test', 'Test', 'Test', '098765432', NULL, 'Address', '1997-05-03', 'Boac', 'Single', 'Male', '125', '72', 'Test, Test', 'Test', 'Test', NULL, 'test_student@gmail.com', '$argon2i$v=19$m=65536,t=4,p=1$MWlKTEw1b3Bnbld5YTFFTg$5v0lcXhwCrdncrAIYk7wKhCtnMYtv31AQOHZ3vNUHbQ', 1, 'A', 1, 'student', NULL, NULL),
 (22, '03032023-040521_messages-3.jpg', 'Test', 'Awd', 'Awd', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'admin@admin.com', '$argon2i$v=19$m=65536,t=4,p=1$ZElaWXk3Z0lQVmZpSVA5aQ$bXr4AicTXCIuN7wVSIr0ZWccxRDWr4YIgy4UDhhB3wQ', NULL, NULL, NULL, 'admin', 0, 2);
 
 --
@@ -379,7 +395,7 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `attendance`
 --
 ALTER TABLE `attendance`
-  MODIFY `attendance_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `attendance_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `course`
@@ -403,7 +419,7 @@ ALTER TABLE `emergency_data`
 -- AUTO_INCREMENT for table `evaluation`
 --
 ALTER TABLE `evaluation`
-  MODIFY `evaluation_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+  MODIFY `evaluation_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
 -- AUTO_INCREMENT for table `family_data`
@@ -415,19 +431,19 @@ ALTER TABLE `family_data`
 -- AUTO_INCREMENT for table `forms`
 --
 ALTER TABLE `forms`
-  MODIFY `form_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `form_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT for table `notification`
 --
 ALTER TABLE `notification`
-  MODIFY `notification_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
+  MODIFY `notification_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
 
 --
 -- AUTO_INCREMENT for table `office`
 --
 ALTER TABLE `office`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `setting`

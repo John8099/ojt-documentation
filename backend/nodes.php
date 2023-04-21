@@ -94,6 +94,9 @@ if (isset($_GET['action'])) {
       case "getNotificationData":
         getNotificationData();
         break;
+      case "getAllOffice":
+        getAllOffice();
+        break;
       default:
         null;
         break;
@@ -117,31 +120,34 @@ function getNotificationData()
   if (mysqli_num_rows($notificationQ) > 0) {
     while ($notificationData = mysqli_fetch_object($notificationQ)) {
       $studentData = getUserById($notificationData->user_id);
-      $studentFullName = "";
-      if ($studentData->mname != null) {
-        $studentFullName = ucwords("$studentData->fname " . $studentData->mname[0] . ". $studentData->lname");
-      } else {
-        $studentFullName = ucwords("$studentData->fname  $studentData->lname");
-      };
+      if ($studentData) {
+        $studentFullName = "";
 
-      $html .= "
-      <li>
-        <hr class='dropdown-divider'>
-      </li>
-      <li class='notification-item " . ($notificationData->unread == 0 ? 'active' : '') . "'>
-        <div style='margin-right: 10px;'>
-          <img src='$SERVER_NAME/profile/" . ($studentData->avatar ? $studentData->avatar : 'default.png') . "' alt='Profile' class='rounded-circle' style='width: 50px'>
-        </div>
-        <div>
-          <h4>$studentFullName</h4>
-          <p>$notificationData->notification</p>
-          <p>" . get_time_ago(strtotime($notificationData->createdAt)) . "</p>
-        </div>
-      </li>
-      <li>
-        <hr class='dropdown-divider'>
-      </li>
-      ";
+        if ($studentData->mname != null) {
+          $studentFullName = ucwords("$studentData->fname " . $studentData->mname[0] . ". $studentData->lname");
+        } else {
+          $studentFullName = ucwords("$studentData->fname  $studentData->lname");
+        };
+
+        $html .= "
+        <li>
+          <hr class='dropdown-divider'>
+        </li>
+        <li class='notification-item " . ($notificationData->unread == 0 ? 'active' : '') . "'>
+          <div style='margin-right: 10px;'>
+            <img src='$SERVER_NAME/profile/" . ($studentData->avatar ? $studentData->avatar : 'default.png') . "' alt='Profile' class='rounded-circle' style='width: 50px'>
+          </div>
+          <div>
+            <h4>$studentFullName</h4>
+            <p>$notificationData->notification</p>
+            <p>" . get_time_ago(strtotime($notificationData->createdAt)) . "</p>
+          </div>
+        </li>
+        <li>
+          <hr class='dropdown-divider'>
+        </li>
+        ";
+      }
     }
   } else {
     $html = "<li class='notification-item justify-content-center align-items-center'>
@@ -1441,7 +1447,7 @@ function getAllOffice()
       array_push($data, $row);
     }
   }
-  return $data;
+  returnResponse($data);
 }
 
 function editAdmin()
